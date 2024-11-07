@@ -10,7 +10,8 @@ const authorize = require("../Middleware/authorize");
 /*** Application Controllers ***/
 const AuthController = require("./Controllers/AuthController");
 const UserController = require("./Controllers/UserController");
-
+const ListingController = require('./Controllers/listingController')
+const BookingController=require('./Controllers/BookingController')
 
 /*** Auth Routers ***/
 router.post("/api/sign-in", AuthController.SignIn);
@@ -26,6 +27,7 @@ router.post("/api/create-user", UserController.createUser);
 router.get("/api/get-user", authorize(), UserController.getUser);
 router.get("/api/users/:id", authorize(), UserController.getUserById);
 
+
 router.post(
   "/api/update-user/:id",
   authorize(),
@@ -38,6 +40,53 @@ router.delete(
 );
 
 
+/*** Space listing/creating ***/
+
+router.post(
+  "/api/listings",
+  authorize(),
+  (req, res, next) => {
+    upload.array('mediaUrl', 4)(req, res, (err) => {
+      if (err) {
+        return res.status(400).json({ success: false, message: err.message });
+      }
+      next();
+    });
+  },
+  ListingController.createListing
+);
+
+router.get("/api/get-user-addresses", authorize(), ListingController.getUserAddresses);
+router.get("/api/addresses", authorize(), ListingController.getAllAddresses);
+
+router.post('/api/favorites', authorize(), ListingController.addToFavorites);
+router.get('/api/favorites', authorize(), ListingController.getFavoriteAddresses);
+router.put('/api/listings/status/:listingId', authorize(), ListingController.updateListingStatus);
+
+// router.post('/api/listings/:listingId', authorize(), ListingController.editListing);
+
+
+router.delete('/api/listings/:listingId', authorize(), ListingController.removeListing);
+
+
+router.post(
+  "/api/listings/:listingId",
+  authorize(),
+  (req, res, next) => {
+    upload.array('mediaUrl', 4)(req, res, (err) => {
+      if (err) {
+        return res.status(400).json({ success: false, message: err.message });
+      }
+      next();
+    });
+  },
+  ListingController.editListing
+);
+
+
+/*** Booking Controller ***/
+
+router.post('/api/booking', authorize(), ListingController.addToFavorites);
 
 
 /*** Notification controller ***/

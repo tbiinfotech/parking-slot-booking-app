@@ -36,7 +36,7 @@ module.exports.SignIn = async (req, res, next) => {
     }
 
     var token = token = jwt.sign(
-      { user_id: user_detail.id, role: "user" },
+      { user_id: user_detail.id, role: "customer" },
       process.env.jwt_token_key,
       { expiresIn: "8h" }
     );

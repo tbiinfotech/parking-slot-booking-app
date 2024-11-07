@@ -187,4 +187,89 @@ const createStorySchema = Joi.object({
     }),
 });
 
-module.exports = { createStorySchema, userSchema, updateUserSchema, signInSchema, emailSchema, passwordSchema, updateProfileSchema };
+
+const rentalListingSchema = Joi.object({
+    title: Joi.string().min(1).required().messages({
+        'string.base': 'Title must be a string',
+        'string.empty': 'Title is required.',
+        'any.required': 'Title is required.',
+    }),
+    description: Joi.string().min(1).required().messages({
+        'string.base': 'Description must be a string',
+        'string.empty': 'Description is required.',
+        'any.required': 'Description is required.',
+    }),
+    type: Joi.string().valid('Parking', 'Storage').required().messages({
+        'any.only': 'Type must be either "Parking" or "Storage"',
+        'any.required': 'Type is required.',
+    }),
+    rentalParkingPlan: Joi.string().valid('Hourly', 'Daily', 'Monthly').required().messages({
+        'any.only': 'Rental parking plan must be "Hourly", "Daily", or "Monthly"',
+        'any.required': 'Rental parking plan is required.',
+    }),
+    storagePlan: Joi.string().valid('Daily', 'Monthly', 'Yearly').required().messages({
+        'any.only': 'Storage plan must be "Daily", "Monthly", or "Yearly"',
+        'any.required': 'Storage plan is required.',
+    }),
+    typeOfSpace: Joi.string().valid('Indoor', 'Outdoor').required().messages({
+        'any.only': 'Type of space must be either "Indoor" or "Outdoor"',
+        'any.required': 'Type of space is required.',
+    }),
+    location: Joi.object({
+        address: Joi.string().min(1).required().messages({
+            'string.base': 'Location address must be a string',
+            'string.empty': 'Location address is required.',
+            'any.required': 'Location address is required.',
+        }),
+        coordinates: Joi.array().items(Joi.number().required()).length(2).required().messages({
+            'array.base': 'Coordinates must be an array of numbers',
+            'array.length': 'Coordinates must contain exactly two numbers.',
+            'any.required': 'Coordinates are required.',
+        }),
+    }).required().messages({
+        'object.base': 'Location must be an object',
+        'any.required': 'Location is required.',
+    }),
+   
+    dimensions: Joi.object({
+        length: Joi.number().greater(0).required().messages({
+            'number.base': 'Length must be a number',
+            'number.greater': 'Length must be greater than zero.',
+            'any.required': 'Length is required.',
+        }),
+        width: Joi.number().greater(0).required().messages({
+            'number.base': 'Width must be a number',
+            'number.greater': 'Width must be greater than zero.',
+            'any.required': 'Width is required.',
+        }),
+        height: Joi.number().greater(0).optional().messages({
+            'number.base': 'Height must be a number',
+            'number.greater': 'Height must be greater than zero.',
+        }),
+    }).required().messages({
+        'object.base': 'Dimensions must be an object',
+        'any.required': 'Dimensions are required.',
+    }),
+    amenities: Joi.array().items(Joi.string().valid(
+        'ClimateControlled', 
+        'SmokeDetectors', 
+        'PetFree', 
+        'SmokeFree', 
+        'PrivateSpace', 
+        'SecurityCamera'
+    )).min(1).required().messages({
+        'array.base': 'Amenities must be an array of strings',
+        'array.min': 'At least one amenity is required.',
+        'any.required': 'Amenities are required.',
+    }),
+    vehicleType: Joi.string().valid('Compact', 'Standard', 'RV', 'Boat', 'LargeVehicles', 'Motorcycle').required().messages({
+        'any.only': 'Vehicle type must be either "Compact", "Standard", "RV", "Boat", "LargeVehicles", or "Motorcycle"',
+        'any.required': 'Vehicle type is required.',
+    }),
+    spaceType: Joi.string().valid('Residential', 'Commercial').required().messages({
+        'any.only': 'Space type must be either "Residential" or "Commercial"',
+        'any.required': 'Space type is required.',
+    }),
+});
+
+module.exports = { rentalListingSchema, createStorySchema, userSchema, updateUserSchema, signInSchema, emailSchema, passwordSchema, updateProfileSchema };

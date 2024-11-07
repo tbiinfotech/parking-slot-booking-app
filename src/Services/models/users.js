@@ -46,6 +46,7 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false, // Flag to check if the user is verified
   },
+  favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Listing' }]
 }, {
   timestamps: true // Automatically manages createdAt and updatedAt
 });
