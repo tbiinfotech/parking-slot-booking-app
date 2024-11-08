@@ -17,7 +17,7 @@ function authorize() {
       // console.log('authorize',token)
       try {
         let decoded = jwt.verify(token, process.env.jwt_token_key);
-        req.user = { id: decoded.user_id, role: decoded.role };
+        req.user = { id: decoded.user_id, role: decoded.role, name: decoded.name };
         const user = await User.findById(decoded.user_id);
         if (!user) {
           return res.json({

@@ -265,15 +265,14 @@ exports.removeListing = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Listing not found.' });
         }
 
+        console.log('req.user', req.user)
         // Check if the requester is the owner of the listing
-        if (listing.owner.toString() !== req.user.id) {
+        if (listing.owner.toString() !== req.user.id && req.user.role !== 'owner') {
             return res.status(403).json({ success: false, message: 'You are not authorized to delete this listing.' });
         }
+        await Listing.findByIdAndDelete(listingId);
 
-        // Remove the listing
-        await listing.remove();
-
-        res.status(200).json({ success: true, message: 'Listing removed successfully.' });
+        res.status(200).json({ success: true, message: 'Space removed successfully.' });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

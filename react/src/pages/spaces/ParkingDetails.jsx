@@ -96,7 +96,6 @@ const ParkingDetails = () => {
             <Box
                 sx={{
                     display: 'flex',
-                    justifyContent: 'space-between',
                     gap: 2,
                     mb: 4,
                     overflowX: 'auto', // Allows scrolling for small screens

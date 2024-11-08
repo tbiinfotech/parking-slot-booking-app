@@ -43,7 +43,7 @@ function DynamicParkingTable({ data, setDeleteUser }) {
             <Tbody className='table-body'>
                 {data.map((item, index) => (<Tr key={index} className='row'>
                     <Td className='sr-no'>{index + 1}.</Td>
-                    <Td className='name'>{item.description}</Td>
+                    <Td sx={{ minWidth: '',  p: { xs: 2, md: 4 },}} className='name'>{item.description}</Td>
                     <Td className='name'>{item?.owner?.name}</Td>
                     <Td className='email'>{item?.spaceType}</Td>
                     <Td className='age'>{item?.type}</Td>
@@ -53,8 +53,8 @@ function DynamicParkingTable({ data, setDeleteUser }) {
                         <IconButton className='view-btn ' onClick={() => navigate(`/parking/details/${item._id}`)}>
                             <img src={viewSvg} alt="view icon" />
                         </IconButton>
-                        {/* <IconButton className='delete-btn' onClick={() => setDeleteUser(item._id)}> */}
-                        <IconButton className='delete-btn'>
+                        <IconButton className='delete-btn' onClick={() => setDeleteUser(item._id)}>
+                        {/* <IconButton className='delete-btn'> */}
 
                             <img src={deleteSvg} alt="delete icon" />
                         </IconButton>

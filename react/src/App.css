@@ -565,6 +565,7 @@ div.dt-container div.dt-layout-row {
 .users-table .table-body .row .name,
 .users-table .table-body .row .gender {
   text-transform: capitalize;
+  padding-inline: 8px;
 }
 
 .users-table .table-body .row .action .view-btn,

@@ -130,7 +130,7 @@ function SpaceListing() {
           ))}
         </Box>
       </Box>
-      <ConfirmModal open={deleteUser} setOpen={setDeleteUser} />
+      <ConfirmModal open={deleteUser} setOpen={setDeleteUser} type={'list'}/>
     </Box>
   )
 }

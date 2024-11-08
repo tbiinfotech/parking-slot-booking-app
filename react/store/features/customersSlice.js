@@ -102,6 +102,34 @@ export const deleteCustomer = createAsyncThunk(
     }
 );
 
+export const deleteListing = createAsyncThunk(
+    'customers/deleteListing',
+    async ({ listId, token }, { rejectWithValue }) => {
+        try {
+            const request = await axios.delete(`${import.meta.env.VITE_API_URL}/api/listings/${listId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            console.log('request', request);
+
+
+            const { success, message } = request.data;
+            if (!success) {
+                toast.error(message || 'Something went Wrong1!')
+                return rejectWithValue(message || 'Something went Wrong!');
+            }
+            toast.success(message || 'User deleted')
+
+            return listId;  // Return data for fulfilled action
+        } catch (error) {
+            console.log('error', error)
+            toast.error(error.response?.data?.message || 'Something went Wrong2!')
+            return rejectWithValue(error.response?.data?.message || 'Something went Wrong!');
+        }
+    }
+);
+
 const initialState = {
     loading: false,
     actionLoading: false,
@@ -164,6 +192,18 @@ const customersSlice = createSlice({
                 state.data = state.data.filter(item => item._id !== action.payload);
             })
             .addCase(deleteCustomer.rejected, (state, action) => {
+                state.actionLoading = false;
+                state.error = action.payload;
+            })
+            .addCase(deleteListing.pending, (state) => {
+                state.actionLoading = true;
+                state.error = null;
+            })
+            .addCase(deleteListing.fulfilled, (state, action) => {
+                state.actionLoading = false;
+                state.data = state.data.filter(item => item._id !== action.payload);
+            })
+            .addCase(deleteListing.rejected, (state, action) => {
                 state.actionLoading = false;
                 state.error = action.payload;
             });

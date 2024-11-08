@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Box, Button, CircularProgress, IconButton, Modal } from '@mui/material';
 import { Close } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
-import { deleteCustomer } from '../../store/features/customersSlice';
+import { deleteCustomer, deleteListing } from '../../store/features/customersSlice';
 
 const style = {
     position: 'absolute',
@@ -17,15 +17,23 @@ const style = {
     ':focus-visible': { outline: 'none' }
 };
 
-function ConfirmModal({ open, setOpen }) {
+function ConfirmModal({ open, setOpen, type }) {
     const dispatch = useDispatch()
     const { token } = useSelector(state => state.auth);
     const { actionLoading } = useSelector(state => state.customers);
     const handleClose = () => setTimeout(() => !actionLoading && setOpen(null), 100);
+
+
     const handleConfirm = () => {
-        dispatch(deleteCustomer({ userId: open, token }))
+        if (type == 'list') {
+            dispatch(deleteListing({ listId: open, token }))
+        } else {
+            dispatch(deleteCustomer({ userId: open, token }))
+        }
     };
 
+
+    console.log('delete user open', open)
     useEffect(() => {
         if (!actionLoading) {
             setOpen(null)
@@ -49,7 +57,7 @@ function ConfirmModal({ open, setOpen }) {
                             <Close sx={{ fontSize: 12, fill: '#000' }} />
                         </IconButton>
                         <Box sx={{ fontSize: 20, fontFamily: 'Roboto', fontWeight: 600, textAlign: 'center', width: 245, margin: '18px auto' }}>
-                            Are you sure you want to delete this user?
+                            {type == 'list' ? `Are you sure you want to delete this List?` : 'Are you sure you want to delete this User?'}
                         </Box>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 2.25 }} className='action-btn'>
                             <Button

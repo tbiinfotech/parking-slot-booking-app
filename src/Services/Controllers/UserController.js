@@ -1,5 +1,7 @@
 const bcrypt = require("bcrypt");
 const User = require("../models/users");
+const Listing = require("../models/Listing");
+
 const Joi = require('joi');
 const jwt = require("jsonwebtoken");
 const fs = require('fs');
@@ -177,7 +179,7 @@ module.exports.updateUser = async (req, res, next) => {
       success: true,
       message: "Profile updated",
     });
-    
+
   } catch (error) {
     console.log(error.message);
     return res.status(500).json({
@@ -193,9 +195,17 @@ module.exports.deleteUser = async (req, res, next) => {
   try {
     const user = await User.findById(id);
 
+    const list = await Listing.find({ owner: id })
+
     // return res.send(user);
     if (user) {
       await User.findByIdAndDelete(id);
+
+      if (list) {
+        await Listing.findByIdAndDelete(list[0]._id);
+      }
+
+
       return res.json({
         status: 200,
         success: true,
