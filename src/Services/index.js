@@ -58,6 +58,10 @@ router.post(
 
 router.get("/api/get-user-addresses", authorize(), ListingController.getUserAddresses);
 router.get("/api/addresses", authorize(), ListingController.getAllAddresses);
+router.get("/api/addresses/:listingId", authorize(), ListingController.getAddressByListId);
+
+
+
 
 router.post('/api/favorites', authorize(), ListingController.addToFavorites);
 router.get('/api/favorites', authorize(), ListingController.getFavoriteAddresses);

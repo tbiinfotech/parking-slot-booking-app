@@ -8,6 +8,7 @@ import CustomerDetail from '../pages/customers/CustomerDetail';
 import SpaceListing from '../pages/spaces/SpaceListing'
 import Chat from '../pages/chat/Chat';
 import CreateAdmin from '../pages/createAdmin/CreateAdmin';
+import ParkingDetails from '../pages/spaces/ParkingDetails';
 
 const router = createBrowserRouter([
     {
@@ -42,6 +43,18 @@ const router = createBrowserRouter([
             }
         />,
     },
+    {
+        path: "parking/details/:id",
+        element: <ProtectedRoute
+            element={
+                <MainLayout>
+                    <ParkingDetails />
+                </MainLayout>
+            }
+        />,
+    },
+
+
 
     {
         path: "customers/details/:customerId",

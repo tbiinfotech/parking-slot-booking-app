@@ -51,6 +51,30 @@ export const fetchSpaceListing = createAsyncThunk(
     }
 );
 
+export const fetchSpaceListingById = createAsyncThunk(
+    'customers/fetchSpaceListingById',
+    async ({ token, id }, { rejectWithValue }) => {
+        try {
+            const request = await axios.get(`${import.meta.env.VITE_API_URL}/api/addresses/${id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            const { response, success, message } = request.data;
+            if (!success) {
+                toast.error(message || 'Something went Wrong!')
+                return rejectWithValue(message || 'Something went Wrong!');
+            }
+
+            return response;  // Return data for fulfilled action
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Something went Wrong!')
+            return rejectWithValue(error.response?.data?.message || 'Something went Wrong!');
+        }
+    }
+);
+
 export const deleteCustomer = createAsyncThunk(
     'customers/deleteCustomer',
     async ({ userId, token }, { rejectWithValue }) => {
@@ -86,6 +110,7 @@ const initialState = {
     error: null,  // Add error field to store error messages
 };
 
+
 const customersSlice = createSlice({
     name: 'customers',
     initialState,
@@ -115,6 +140,18 @@ const customersSlice = createSlice({
                 state.data = action.payload;
             })
             .addCase(fetchSpaceListing.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+            .addCase(fetchSpaceListingById.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchSpaceListingById.fulfilled, (state, action) => {
+                state.loading = false;
+                state.data = action.payload;
+            })
+            .addCase(fetchSpaceListingById.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             })

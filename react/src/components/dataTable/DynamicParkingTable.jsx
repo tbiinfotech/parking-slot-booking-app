@@ -50,8 +50,7 @@ function DynamicParkingTable({ data, setDeleteUser }) {
                     <Td className='age'>100$d</Td>
 
                     <Td className='action'>
-                        {/* <IconButton className='view-btn ' onClick={() => navigate(`/customers/details/${item._id}`)}> */}
-                        <IconButton className='view-btn '>
+                        <IconButton className='view-btn ' onClick={() => navigate(`/parking/details/${item._id}`)}>
                             <img src={viewSvg} alt="view icon" />
                         </IconButton>
                         {/* <IconButton className='delete-btn' onClick={() => setDeleteUser(item._id)}> */}

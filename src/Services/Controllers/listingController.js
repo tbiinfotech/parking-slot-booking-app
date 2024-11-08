@@ -123,7 +123,39 @@ exports.getAllAddresses = async (req, res) => {
             response: listings,
             success: true,
             message: "Data found",
-          });
+        });
+
+        // res.status(200).json({ success: true, listings });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+exports.getAddressByListId = async (req, res) => {
+    try {
+
+        const { listingId } = req.params
+        // Fetch all listings from the database
+        const listings = await Listing.find({ _id: listingId }).populate('owner');
+
+        // Extract addresses from listings
+        const addresses = listings.map(listing => ({
+            address: listing.location.address,
+            coordinates: listing.location.coordinates
+        }));
+
+
+        // Check if addresses were found
+        if (addresses.length === 0) {
+            return res.status(404).json({ success: false, message: 'No addresses found.' });
+        }
+
+        return res.json({
+            status: 200,
+            response: listings,
+            success: true,
+            message: "Data found",
+        });
 
         // res.status(200).json({ success: true, listings });
     } catch (error) {
