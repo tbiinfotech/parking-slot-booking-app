@@ -52,16 +52,16 @@ function Sidebar() {
             path: 'space-listing',
             icon: chatSvg,
         },
-        // {
-        //     label: 'Payments',
-        //     path: 'reported-users',
-        //     icon: reportedUsersSvg,
-        // },
-        // {
-        //     label: 'Add Account',
-        //     path: 'create-admin',
-        //     icon: createAdminSvg,
-        // },
+        {
+            label: 'Payments',
+            path: 'payments',
+            icon: reportedUsersSvg,
+        },
+        {
+            label: 'Account',
+            path: 'link-bank-account',
+            icon: createAdminSvg,
+        },
     ];
 
     return (

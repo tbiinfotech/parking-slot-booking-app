@@ -63,7 +63,7 @@ module.exports.getUserById = async (req, res) => {
       message: "Internal Server Error",
     });
   }
-};
+};  
 
 
 module.exports.createUser = async (req, res, next) => {

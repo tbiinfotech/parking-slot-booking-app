@@ -11,7 +11,8 @@ const authorize = require("../Middleware/authorize");
 const AuthController = require("./Controllers/AuthController");
 const UserController = require("./Controllers/UserController");
 const ListingController = require('./Controllers/listingController')
-const BookingController=require('./Controllers/BookingController')
+const BookingController = require('./Controllers/BookingController')
+const PaymentController = require('./Controllers/PaymentController')
 
 /*** Auth Routers ***/
 router.post("/api/sign-in", AuthController.SignIn);
@@ -93,7 +94,8 @@ router.post(
 router.post('/api/booking', authorize(), ListingController.addToFavorites);
 
 
-/*** Notification controller ***/
+/*** Payment controller ***/
+router.post('/api/create-connected-account', authorize(), PaymentController.createConnectedAccount);
 
 
 

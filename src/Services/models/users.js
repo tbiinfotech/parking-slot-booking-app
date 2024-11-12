@@ -25,6 +25,12 @@ const userSchema = new mongoose.Schema({
     enum: ["owner", "customer"],
     default: "customer",
   },
+  stripeAccountId: {
+    type: String,
+    required: false,  
+    unique: true,     
+    sparse: true      // Optional: This allows users without a Stripe account to still exist in the DB
+  },
   status: {
     type: String,
     enum: ["active", "inactive"],

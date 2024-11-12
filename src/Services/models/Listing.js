@@ -5,8 +5,10 @@ const listingSchema = new mongoose.Schema({
     title: { type: String, required: true },
     description: { type: String, required: true },
     type: { type: String, enum: ['Parking', 'Storage'], required: true },
+    
     rentalParkingPlan: { type: String, enum: ['Hourly', 'Daily', 'Monthly'], required: true },
     storagePlan: { type: String, enum: ['Daily', 'Monthly', 'Yearly'], required: true },
+
     typeOfSpace: { type: String, enum: ['Indoor', 'Outdoor'], required: true },
     location: {
         address: { type: String, required: true },

@@ -9,6 +9,8 @@ import SpaceListing from '../pages/spaces/SpaceListing'
 import Chat from '../pages/chat/Chat';
 import CreateAdmin from '../pages/createAdmin/CreateAdmin';
 import ParkingDetails from '../pages/spaces/ParkingDetails';
+import LinkBankAccount from '../pages/account/LinkBankAccount';
+import Payments from '../pages/payments/Payments';
 
 const router = createBrowserRouter([
     {
@@ -49,6 +51,26 @@ const router = createBrowserRouter([
             element={
                 <MainLayout>
                     <ParkingDetails />
+                </MainLayout>
+            }
+        />,
+    },
+    {
+        path: "link-bank-account",
+        element: <ProtectedRoute
+            element={
+                <MainLayout>
+                    <LinkBankAccount />
+                </MainLayout>
+            }
+        />,
+    },
+    {
+        path: "payments",
+        element: <ProtectedRoute
+            element={
+                <MainLayout>
+                    <Payments />
                 </MainLayout>
             }
         />,
