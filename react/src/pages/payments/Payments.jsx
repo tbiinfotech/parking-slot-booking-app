@@ -3,7 +3,7 @@ import { Box, Tab, Tabs, Typography } from '@mui/material'
 import PropTypes from 'prop-types';
 import DynamicTable from '../../components/dataTable/DynamicTransactionTable'
 import ConfirmModal from '../../helper/ConfirmModal';
-import { fetchCustomers } from '../../../store/features/customersSlice';
+import { fetchTransaction } from '../../../store/features/customersSlice';
 import { useDispatch, useSelector } from 'react-redux';
 
 
@@ -73,7 +73,7 @@ function Payments() {
 
     useEffect(() => {
         if (!effectRan.current) {
-            dispatch(fetchCustomers({ token }));
+            dispatch(fetchTransaction({ token }));
             effectRan.current = true;
         }
     }, [dispatch]);
@@ -104,6 +104,7 @@ function Payments() {
 
     };
 
+    console.log('transaction data', data)
 
     return (
         <Box className={'customers'}>

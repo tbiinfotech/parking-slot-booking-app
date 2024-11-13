@@ -30,3 +30,14 @@ export const isTokenExpired = (token) => {
         return true;
     }
 };
+
+export function formatDate(dateString) {
+    // Create a new Date object from the input string
+    const date = new Date(dateString);
+
+    // Define options for formatting
+    const options = { day: '2-digit', month: 'short', year: 'numeric' };
+
+    // Format the date using toLocaleDateString
+    return date.toLocaleDateString('en-GB', options).replace(',', '');
+  }

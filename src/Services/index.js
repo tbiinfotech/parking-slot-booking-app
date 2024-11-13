@@ -13,6 +13,7 @@ const UserController = require("./Controllers/UserController");
 const ListingController = require('./Controllers/listingController')
 const BookingController = require('./Controllers/BookingController')
 const PaymentController = require('./Controllers/PaymentController')
+const TransactionController = require('./Controllers/TransactionController')
 
 /*** Auth Routers ***/
 router.post("/api/sign-in", AuthController.SignIn);
@@ -91,11 +92,20 @@ router.post(
 
 /*** Booking Controller ***/
 
-router.post('/api/booking', authorize(), ListingController.addToFavorites);
+router.post('/api/booking', authorize(), BookingController.createBooking);
 
 
 /*** Payment controller ***/
 router.post('/api/create-connected-account', authorize(), PaymentController.createConnectedAccount);
+
+
+router.post('/webhook', express.raw({ type: 'application/json' }), BookingController.webhook)
+
+router.get('/api/test', BookingController.test)
+
+router.get('/api/transactions', TransactionController.getAllTransactions)
+router.post('/api/transactions', TransactionController.createTransaction)
+
 
 
 

@@ -27,6 +27,31 @@ export const fetchCustomers = createAsyncThunk(
     }
 );
 
+
+export const fetchTransaction = createAsyncThunk(
+    'customers/fetchTransaction',
+    async ({ token }, { rejectWithValue }) => {
+        try {
+            const request = await axios.get(`${import.meta.env.VITE_API_URL}/api/transactions`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            const { response, success, message } = request.data;
+            if (!success) {
+                toast.error(message || 'Something went Wrong!')
+                return rejectWithValue(message || 'Something went Wrong!');
+            }
+
+            return response;  // Return data for fulfilled action
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Something went Wrong!')
+            return rejectWithValue(error.response?.data?.message || 'Something went Wrong!');
+        }
+    }
+)
+
 export const fetchSpaceListing = createAsyncThunk(
     'customers/fetchSpaceListing',
     async ({ token }, { rejectWithValue }) => {
@@ -147,6 +172,18 @@ const customersSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
+            .addCase(fetchTransaction.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchTransaction.fulfilled, (state, action) => {
+                state.loading = false;
+                state.data = action.payload;
+            })
+            .addCase(fetchTransaction.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
             .addCase(fetchCustomers.pending, (state) => {
                 state.loading = true;
                 state.error = null;

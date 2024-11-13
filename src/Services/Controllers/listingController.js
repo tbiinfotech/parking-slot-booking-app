@@ -1,6 +1,7 @@
 const Listing = require('../models/Listing');
 const User = require('../models/users')
 const { rentalListingSchema } = require('../../libs/schemaValidation')
+const stripe = require('stripe')(`${process.env.STRIPE_KEY}`);
 const fs = require('fs');
 
 // 1. Create a new listing
@@ -10,8 +11,8 @@ exports.createListing = async (req, res) => {
         const title = req.body.title?.trim();
         const description = req.body.description?.trim();
         const type = req.body.type?.trim();
-        const rentalParkingPlan = req.body.rentalParkingPlan?.trim();
-        const storagePlan = req.body.storagePlan?.trim();
+        const rentalParkingPlan = req.body.rentalParkingPlan;
+        const storagePlan = req.body.storagePlan;
         const typeOfSpace = req.body.typeOfSpace?.trim();
         const duration = req.body.duration?.trim();
 
@@ -40,7 +41,18 @@ exports.createListing = async (req, res) => {
         // Handle photos if files are uploaded
         const photos = req.files ? req.files.map(file => file.path) : [];
 
-
+        // Parse and convert the rentalParkingPlan's price fields to numbers
+        if (rentalParkingPlan) {
+            if (rentalParkingPlan.hourly) {
+                rentalParkingPlan.hourly.price = parseFloat(rentalParkingPlan.hourly.price.trim()) || 0;
+            }
+            if (rentalParkingPlan.daily) {
+                rentalParkingPlan.daily.price = parseFloat(rentalParkingPlan.daily.price.trim()) || 0;
+            }
+            if (rentalParkingPlan.monthly) {
+                rentalParkingPlan.monthly.price = parseFloat(rentalParkingPlan.monthly.price.trim()) || 0;
+            }
+        }
 
         // Validate required fields
         const { error, value } = rentalListingSchema.validate({ title, description, type, rentalParkingPlan, storagePlan, typeOfSpace, location, dimensions, amenities, vehicleType, spaceType });
@@ -50,7 +62,7 @@ exports.createListing = async (req, res) => {
             });
         }
 
-
+        // Create a new listing and save it to the database
         const listing = new Listing({
             owner: req.user.id,  // Assume user is authenticated and user ID is available
             title,
@@ -71,6 +83,8 @@ exports.createListing = async (req, res) => {
         await listing.save();
         res.status(201).json({ success: true, message: 'Listing created successfully', listing });
     } catch (error) {
+
+        console.log('create space list error', error)
         res.status(500).json({ success: false, message: error.message });
     }
 };
@@ -162,7 +176,6 @@ exports.getAddressByListId = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
-
 
 
 exports.addToFavorites = async (req, res) => {
@@ -280,10 +293,11 @@ exports.removeListing = async (req, res) => {
 
 
 
+ // Ensure fs module is required if you are deleting files
 exports.editListing = async (req, res) => {
     try {
         const { listingId } = req.params;
-        console.log('req.body.title', req.body)
+
         // Find the listing by ID
         let listing = await Listing.findById(listingId);
         if (!listing) {
@@ -295,15 +309,16 @@ exports.editListing = async (req, res) => {
             return res.status(403).json({ success: false, message: 'You are not authorized to edit this listing.' });
         }
 
-        // Parse and update fields
+        // Trim and parse fields for updating, falling back to current listing values if not provided
         const title = req.body.title?.trim() || listing.title;
         const description = req.body.description?.trim() || listing.description;
         const type = req.body.type?.trim() || listing.type;
-        const rentalParkingPlan = req.body.rentalParkingPlan?.trim() || listing.rentalParkingPlan;
-        const storagePlan = req.body.storagePlan?.trim() || listing.storagePlan;
+        const rentalParkingPlan = req.body.rentalParkingPlan || listing.rentalParkingPlan;
+        const storagePlan = req.body.storagePlan || listing.storagePlan;
         const typeOfSpace = req.body.typeOfSpace?.trim() || listing.typeOfSpace;
         const duration = req.body.duration?.trim() || listing.duration;
 
+        // Handle location
         const location = req.body.location ? {
             address: req.body.location.address?.trim() || listing.location.address,
             coordinates: [
@@ -312,12 +327,14 @@ exports.editListing = async (req, res) => {
             ]
         } : listing.location;
 
+        // Handle dimensions
         const dimensions = req.body.dimensions ? {
             length: parseFloat(req.body.dimensions.length) || listing.dimensions.length,
             width: parseFloat(req.body.dimensions.width) || listing.dimensions.width,
             height: parseFloat(req.body.dimensions.height) || listing.dimensions.height
         } : listing.dimensions;
 
+        // Handle amenities (filter out empty values)
         const amenities = Array.isArray(req.body.amenities)
             ? req.body.amenities.map(a => a.trim()).filter(Boolean)
             : listing.amenities;
@@ -325,7 +342,18 @@ exports.editListing = async (req, res) => {
         const vehicleType = req.body.vehicleType?.trim() || listing.vehicleType;
         const spaceType = req.body.spaceType?.trim() || listing.spaceType;
 
+        // Handle photos if files are uploaded
+        if (req.files && req.files.length > 0) {
+            // Delete old photos from the file system
+            listing.photos.forEach(photoPath => {
+                fs.unlink(photoPath, (err) => {
+                    if (err) console.error(`Failed to delete old photo at ${photoPath}:`, err);
+                });
+            });
 
+            // Add new photos
+            listing.photos = req.files.map(file => file.path);
+        }
 
         // Validate required fields
         const { error, value } = rentalListingSchema.validate({ title, description, type, rentalParkingPlan, storagePlan, typeOfSpace, location, dimensions, amenities, vehicleType, spaceType });
@@ -335,21 +363,7 @@ exports.editListing = async (req, res) => {
             });
         }
 
-        // Check if new photos are provided in the request
-        if (req.files && req.files.length > 0) {
-            // Delete old photos from the file system
-            listing.photos.forEach(photoPath => {
-                fs.unlink(photoPath, (err) => {
-                    if (err) console.error(`Failed to delete old photo at ${photoPath}:`, err);
-                });
-            });
-
-            // Update photos with new files
-            listing.photos = req.files.map(file => file.path);
-        }
-
-        console.log('title', title)
-        // Update listing fields
+        // Update the listing fields
         listing.title = title;
         listing.description = description;
         listing.type = type;
@@ -365,11 +379,16 @@ exports.editListing = async (req, res) => {
 
         // Save the updated listing
         await listing.save();
+
+        // Respond with the updated listing
         res.status(200).json({ success: true, message: 'Listing updated successfully', listing });
+
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        console.error('Error editing listing:', error);  // Log the error for debugging
+        res.status(500).json({ success: false, message: 'An error occurred while updating the listing.' });
     }
 };
+
 
 
 

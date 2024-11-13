@@ -15,7 +15,11 @@ const { SendEmail } = require('../../libs/Helper')
 
 module.exports.getUser = async (req, res, next) => {
   try {
-    const users = await User.find({ email: { $ne: 'admin@gmail.com' } });
+    const users = await User.find({
+      email: { $ne: 'admin@gmail.com' },
+      isDeleted: { $ne: true },  // Exclude users marked as deleted
+    });
+
     return res.json({
       status: 200,
       response: users,
@@ -31,6 +35,7 @@ module.exports.getUser = async (req, res, next) => {
     });
   }
 };
+
 
 
 module.exports.getUserById = async (req, res) => {
@@ -63,7 +68,7 @@ module.exports.getUserById = async (req, res) => {
       message: "Internal Server Error",
     });
   }
-};  
+};
 
 
 module.exports.createUser = async (req, res, next) => {
@@ -194,32 +199,27 @@ module.exports.deleteUser = async (req, res, next) => {
   const { id } = req.params;
   try {
     const user = await User.findById(id);
+    const lists = await Listing.find({ owner: id });
 
-    const list = await Listing.find({ owner: id })
-
-    // return res.send(user);
     if (user) {
-      await User.findByIdAndDelete(id);
-
-      if (list) {
-        await Listing.findByIdAndDelete(list[0]._id);
-      }
-
+      // Update user to mark as deleted
+      user.isDeleted = true;
+      await user.save();
 
       return res.json({
         status: 200,
         success: true,
-        message: "User deleted",
+        message: "User deleted successfully.",
       });
     } else {
       return res.send({
         status: 400,
         success: false,
-        message: "User not exist!",
+        message: "User does not exist!",
       });
     }
   } catch (error) {
-    console.log("Error while trying to get data-------", error);
+    console.log("Error while trying to update data-------", error);
     return res.json({
       status: 400,
       success: false,

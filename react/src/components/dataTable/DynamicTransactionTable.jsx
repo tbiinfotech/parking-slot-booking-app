@@ -6,7 +6,7 @@ import 'react-super-responsive-table/dist/SuperResponsiveTableStyle.css';
 import viewSvg from '../../assets/images/view.svg'
 import deleteSvg from '../../assets/images/delete.svg'
 import { useNavigate } from 'react-router-dom';
-
+import { formatDate } from '../../helper/helper'
 
 const statusStyle = (status) => {
     return {
@@ -43,11 +43,11 @@ function DynamicTransactionTable({ data, setDeleteUser }) {
             <Tbody className='table-body'>
                 {data.map((item, index) => (<Tr key={index} className='row'>
                     <Td className='sr-no'>{index + 1}.</Td>
-                    <Td className='name'>{item.description}</Td>
-                    <Td className='name'>{item?.owner?.name}</Td>
-                    <Td className='email'>{item?.spaceType}</Td>
-                    <Td className='age'>{item?.type}</Td>
-                    <Td className='age'>100$d</Td>
+                    <Td className='name'>{formatDate(item.date)}</Td>
+                    <Td className='name'>{item?.customerName}</Td>
+                    <Td className='email'>{item?.hostName}</Td>
+                    <Td className='age'>{item?.listingTitle}</Td>
+                    <Td className='age'>{item?.amount}</Td>
                 </Tr>))}
             </Tbody>
         </Table>

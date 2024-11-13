@@ -39,10 +39,21 @@ const bookingSchema = new mongoose.Schema({
         ref: 'User', // Assuming 'User' is the model name for users
         required: true
     },
+    status: {
+        type: String,
+        trim: true
+    }, paymentStatus: {
+        type: String,
+        trim: true
+    },
     createdAt: {
         type: Date,
         default: Date.now
     }
+}, {
+    timestamps: true // Automatically manages createdAt and updatedAt
 });
 
-module.exports = mongoose.model('Booking', bookingSchema);
+// module.exports = mongoose.model('Booking', bookingSchema);
+const Booking = mongoose.model('Booking', bookingSchema);
+module.exports = Booking;

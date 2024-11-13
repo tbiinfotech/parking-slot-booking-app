@@ -27,8 +27,8 @@ const userSchema = new mongoose.Schema({
   },
   stripeAccountId: {
     type: String,
-    required: false,  
-    unique: true,     
+    required: false,
+    unique: true,
     sparse: true      // Optional: This allows users without a Stripe account to still exist in the DB
   },
   status: {
@@ -51,6 +51,10 @@ const userSchema = new mongoose.Schema({
   isVerified: {
     type: Boolean,
     default: false, // Flag to check if the user is verified
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false, // User is not deleted by default
   },
   favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Listing' }]
 }, {

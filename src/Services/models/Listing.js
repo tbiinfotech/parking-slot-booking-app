@@ -5,9 +5,32 @@ const listingSchema = new mongoose.Schema({
     title: { type: String, required: true },
     description: { type: String, required: true },
     type: { type: String, enum: ['Parking', 'Storage'], required: true },
-    
-    rentalParkingPlan: { type: String, enum: ['Hourly', 'Daily', 'Monthly'], required: true },
-    storagePlan: { type: String, enum: ['Daily', 'Monthly', 'Yearly'], required: true },
+
+    // Plans for Parking
+    rentalParkingPlan: {
+        hourly: {
+            price: { type: Number, required: function() { return this.type === 'Parking'; } }
+        },
+        daily: { 
+            price: { type: Number, required: function() { return this.type === 'Parking'; } }
+        },
+        monthly: { 
+            price: { type: Number, required: function() { return this.type === 'Parking'; } }
+        }
+    },
+
+    // Plans for Storage
+    storagePlan: {
+        daily: { 
+            price: { type: Number, required: function() { return this.type === 'Storage'; } }
+        },
+        monthly: { 
+            price: { type: Number, required: function() { return this.type === 'Storage'; } }
+        },
+        yearly: { 
+            price: { type: Number, required: function() { return this.type === 'Storage'; } }
+        }
+    },
 
     typeOfSpace: { type: String, enum: ['Indoor', 'Outdoor'], required: true },
     location: {
@@ -24,9 +47,9 @@ const listingSchema = new mongoose.Schema({
         height: { type: Number }
     },
     amenities: { 
-        type: [String], // Change to an array of strings
+        type: [String], 
         enum: ['ClimateControlled', 'SmokeDetectors', 'PetFree', 'SmokeFree', 'PrivateSpace', 'SecurityCamera'], 
-        required: true 
+        default: []
     },
     vehicleType: { type: String, enum: ['Compact', 'Standard', 'RV', 'Boat', 'LargeVehicles', 'Motorcycle'], required: true },
     spaceType: { type: String, enum: ['Residential', 'Commercial'], required: true },
