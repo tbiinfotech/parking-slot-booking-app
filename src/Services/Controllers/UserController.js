@@ -38,6 +38,55 @@ module.exports.getUser = async (req, res, next) => {
 
 
 
+
+module.exports.getUsersWithPagination = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;  // Default to page 1 if not provided
+    const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page if not provided
+    const skip = (page - 1) * limit;
+
+    // Define your filter criteria
+    const filter = {
+      email: { $ne: 'admin@gmail.com' },
+      isDeleted: { $ne: true },  // Exclude users marked as deleted
+    };
+
+    // Get the data with pagination and filter applied
+    const users = await User.find(filter)
+      .skip(skip)
+      .limit(limit);
+
+    // Optionally, get the total count for pagination info
+    const totalUsers = await User.countDocuments(filter);
+    const totalPages = Math.ceil(totalUsers / limit);
+
+    return res.json({
+      status: 200,
+
+      data: {
+        records: users, pagination: {
+          totalUsers,
+          totalPages,
+          currentPage: page,
+          limit,
+        },
+      },
+      success: true,
+      message: "Data found",
+
+    });
+  } catch (error) {
+    console.error("Error while trying to get data-------", error);
+    return res.json({
+      status: 400,
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
+
 module.exports.getUserById = async (req, res) => {
   try {
 

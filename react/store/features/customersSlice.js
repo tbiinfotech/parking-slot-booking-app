@@ -3,23 +3,51 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 
 
+// export const fetchCustomers1 = createAsyncThunk(
+//     'customers/fetchCustomers',
+//     async ({ token }, { rejectWithValue }) => {
+//         try {
+//             const request = await axios.get(`${import.meta.env.VITE_API_URL}/api/get-user`, {
+//                 headers: {
+//                     Authorization: `Bearer ${token}`,
+//                 },
+//             });
+
+//             const { response, success, message } = request.data;
+//             if (!success) {
+//                 toast.error(message || 'Something went Wrong!')
+//                 return rejectWithValue(message || 'Something went Wrong!');
+//             }
+
+//             return response;  // Return data for fulfilled action
+//         } catch (error) {
+//             toast.error(error.response?.data?.message || 'Something went Wrong!')
+//             return rejectWithValue(error.response?.data?.message || 'Something went Wrong!');
+//         }
+//     }
+// );
+
 export const fetchCustomers = createAsyncThunk(
     'customers/fetchCustomers',
-    async ({ token }, { rejectWithValue }) => {
+    async ({ token, page, limit, status }, { rejectWithValue }) => {
         try {
-            const request = await axios.get(`${import.meta.env.VITE_API_URL}/api/get-user`, {
+            let query = `/?page=${encodeURIComponent(page || 1)}&limit=${encodeURIComponent(limit || 10)}`
+            if (status) {
+                query += `&status=${encodeURIComponent(status)}`
+            }
+            const request = await axios.get(`${import.meta.env.VITE_API_URL}/api/get-users${query}`, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
+                    Authorization: `Bearer ${token} `,
                 },
             });
 
-            const { response, success, message } = request.data;
+            const { data, success, message } = request.data;
             if (!success) {
                 toast.error(message || 'Something went Wrong!')
                 return rejectWithValue(message || 'Something went Wrong!');
             }
 
-            return response;  // Return data for fulfilled action
+            return data;  // Return data for fulfilled action
         } catch (error) {
             toast.error(error.response?.data?.message || 'Something went Wrong!')
             return rejectWithValue(error.response?.data?.message || 'Something went Wrong!');
@@ -158,7 +186,7 @@ export const deleteListing = createAsyncThunk(
 const initialState = {
     loading: false,
     actionLoading: false,
-    data: [],
+    data: null,
     // spaceList:[],
     error: null,  // Add error field to store error messages
 };

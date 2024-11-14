@@ -27,6 +27,8 @@ router.post("/api/resend-otp", AuthController.resendOtp);
 /*** Admin ***/
 router.post("/api/create-user", UserController.createUser);
 router.get("/api/get-user", authorize(), UserController.getUser);
+router.get('/api/get-users', authorize(),UserController.getUsersWithPagination);
+
 router.get("/api/users/:id", authorize(), UserController.getUserById);
 
 

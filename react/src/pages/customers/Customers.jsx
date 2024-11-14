@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Box, Tab, Tabs, Typography } from '@mui/material'
+import { Box, Tab, Tabs, Typography, Pagination, PaginationItem } from '@mui/material'
 import PropTypes from 'prop-types';
 import DynamicTable from '../../components/dataTable/DynamicTable'
 import ConfirmModal from '../../helper/ConfirmModal';
@@ -41,30 +41,12 @@ function a11yProps(index) {
     'aria-controls': `customers-tabpanel-${index}`,
   };
 }
-
-const dummyData = [
-  { id: 1, name: 'Ophelia Coleman', email: 'opheliacoleman@gmail.com', age: 28, gender: 'Female', status: 'Active' },
-  { id: 2, name: 'James Anderson', email: 'james.anderson@email.com', age: 27, gender: 'Female', status: 'Inactive' },
-  { id: 3, name: 'Emily Johnson', email: 'emily.johnson@email.com', age: 32, gender: 'Male', status: 'Active' },
-  { id: 4, name: 'Michael Smith', email: 'michael.smith@email.com', age: 20, gender: 'Male', status: 'Inactive' },
-  { id: 5, name: 'David Wilson', email: 'david.wilson@email.com', age: 25, gender: 'Male', status: 'Active' },
-  { id: 6, name: 'Ophelia Coleman', email: 'opheliacoleman@gmail.com', age: 28, gender: 'Female', status: 'Active' },
-  { id: 7, name: 'James Anderson', email: 'james.anderson@email.com', age: 27, gender: 'Female', status: 'Inactive' },
-  { id: 8, name: 'Emily Johnson', email: 'emily.johnson@email.com', age: 32, gender: 'Male', status: 'Active' },
-  { id: 9, name: 'Michael Smith', email: 'michael.smith@email.com', age: 20, gender: 'Male', status: 'Inactive' },
-  { id: 10, name: 'David Wilson', email: 'david.wilson@email.com', age: 25, gender: 'Male', status: 'Active' },
-];
-
-
 function Customers() {
   const [deleteUser, setDeleteUser] = useState(null)
   const [value, setValue] = useState(0);
   const [records, setData] = useState([]);
-  // const [roleName, setRoleName] = useState(null);
-  // const [currentPage, setCurrentPage] = useState(1);
-  // const [totalPages, setTotalPages] = useState(0);
-  // const [searchValue, setSearchValue] = useState('');
-  // const [type, setType] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const effectRan = useRef(false);
   const { token } = useSelector(state => state.auth);
   const { data } = useSelector(state => state.customers);
@@ -73,37 +55,33 @@ function Customers() {
 
   useEffect(() => {
     if (!effectRan.current) {
-      dispatch(fetchCustomers({ token }));
+      dispatch(fetchCustomers({ token, page: 1, limit: 10 }));
       effectRan.current = true;
     }
   }, [dispatch]);
 
-  // useEffect(() => {
-  //   if (user?.data?.user?.rolename)
-  //     setRoleName(user.data.user.rolename?.toLowerCase());
-  // }, [user]);
 
   useEffect(() => {
-    if (data?.length) {
-      setData(data);
-      // setCurrentPage(current_page || 1);
-      // setTotalPages(Math.ceil((total || 0) / (per_page || 1)));
+    console.log('use effect', data)
+    if (data) {
+      const { records, pagination } = data;
+      setData(records || []);
+      setTotalPages(pagination?.totalPages || 1);
+      setCurrentPage(pagination?.currentPage || 1);
     }
   }, [data]);
 
-  // const handleChangePage = (status, newPage) => {
-  //   setData(null);
-  //   let filter = '';
-  //   if (status) filter = { status: status };
-  //   dispatch(fetchLandForSale(token, newPage, filter));
-  // };
-
-  const handleChange = (event, newValue) => {
-    // setData(null);
-    setValue(newValue);
-
+  const handleChangePage = (event, page) => {
+    setData([]);
+    dispatch(fetchCustomers({ token, page, limit: 10 }));
   };
 
+  const handleChange = (event, newValue) => {
+    let status = newValue === 1 ? 'active' : newValue === 2 ? 'inactive' : null;
+    setData([]);
+    setValue(newValue);
+    dispatch(fetchCustomers({ token, page: 1, limit: 10, status }));
+  };
 
   return (
     <Box className={'customers'}>
@@ -152,6 +130,16 @@ function Customers() {
             </CustomTabPanel>
           ))}
         </Box>
+        {totalPages > 1 && <Box className='pagination' sx={{ mt: { sm: 3, md: 5.5, lg: 7.5 }, mx: 'auto' }}>
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            boundaryCount={2}
+            onChange={handleChangePage}
+            color="primary"
+            renderItem={(item) => <PaginationItem {...item} disabled={item.selected || item.disabled} />}
+          />
+        </Box>}
       </Box>
       <ConfirmModal open={deleteUser} setOpen={setDeleteUser} />
     </Box>
