@@ -54,6 +54,9 @@ const userSchema = Joi.object({
 
 });
 
+
+
+
 const updateUserSchema = Joi.object({
     name: Joi.string().min(1).max(50).required().messages({
         'string.base': 'Name must be a string',

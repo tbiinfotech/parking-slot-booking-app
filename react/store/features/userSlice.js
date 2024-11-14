@@ -64,6 +64,35 @@ export const updateUser = createAsyncThunk(
   }
 );
 
+
+export const updatePassword = createAsyncThunk(
+  'user/updatePassword',
+  async ({ newPassword, token }, { rejectWithValue, dispatch }) => {
+    try {
+
+      const request = await axios.post(`${import.meta.env.VITE_API_URL}/api/reset-admin-password`, { newPassword, token }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const { user,success, message } = request.data;
+      if (!success) {
+        toast.error(message || 'Something went Wrong!')
+        return rejectWithValue(message || 'Something went Wrong!');
+      }
+      toast.success(message || 'Profile updated')
+      // dispatch(fetchUser({ userId, token }))
+      return user;
+    } catch (error) {
+      console.log('error', error);
+
+      toast.error(error.response?.data?.error || 'Something went Wrong!')
+      return rejectWithValue(error.response?.data?.error || 'Something went Wrong!');
+    }
+  }
+);
+
 const initialState = {
   loading: false,
   data: null,
@@ -104,7 +133,19 @@ const userSlice = createSlice({
       .addCase(updateUser.rejected, (state, action) => {
         state.updateLoading = false;
         state.error = action.payload;
+      }).addCase(updatePassword.pending, (state) => {
+        state.updateLoading = true;
+        state.error = null;
+      })
+      .addCase(updatePassword.fulfilled, (state, action) => {
+        state.updateLoading = false;
+        state.data = { ...state.data, ...action.payload };
+      })
+      .addCase(updatePassword.rejected, (state, action) => {
+        state.updateLoading = false;
+        state.error = action.payload;
       });
+
   },
 });
 

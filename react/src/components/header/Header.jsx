@@ -35,18 +35,16 @@ function Header() {
     setMenu(value);
   };
 
-
-
-  let settings = ['Logout'];
+  let settings = ['Profile', 'Logout'];
 
   useEffect(() => {
     if (activeMenu === 'Logout') {
       dispatch(logoutSuccess());
       navigate('/login');
     }
-    // if (activeMenu === 'Profile') {
-    //   navigate(`/profile`);
-    // }
+    if (activeMenu === 'Profile') {
+      navigate(`/profile`);
+    }
   }, [logoutSuccess, navigate, activeMenu]);
 
   // function getName(name) {

@@ -48,10 +48,16 @@ function DynamicTable({ data, setDeleteUser, onDeleteSelected, selectedUsers,
     <>
       <Button
         variant="contained"
-        color="secondary"
         onClick={handleDeleteSelected}
         disabled={selectedUsers.length === 0}
-        style={{ marginBottom: '10px' }}
+        sx={{
+          backgroundColor: '#3621A0',
+          color: '#fff', // Set the text color, if needed
+          '&:hover': {
+            backgroundColor: '#2b1a85', // Darker shade for hover effect
+          },
+          marginBottom: '10px',
+        }}
       >
         Delete Selected
       </Button>

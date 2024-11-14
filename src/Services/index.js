@@ -23,6 +23,8 @@ router.post("/api/verify-otp", AuthController.verifyOtp);
 
 router.post("/api/reset-password", AuthController.ResetPassword);
 router.post("/api/resend-otp", AuthController.resendOtp);
+router.post("/api/reset-admin-password", authorize(),AuthController.resetAdminPassword);
+
 
 
 /*** Admin ***/

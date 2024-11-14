@@ -48,6 +48,7 @@ module.exports.SignIn = async (req, res, next) => {
       role: user_detail.role,
       age: user_detail.age,
       status: user_detail.status,
+      phoneNumber: user_detail.phoneNumber
     };
 
     return res.json({
@@ -285,3 +286,49 @@ module.exports.ResetPassword = async (req, res) => {
     return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
+
+
+
+module.exports.resetAdminPassword = async (req, res) => {
+  const { newPassword } = req.body;
+
+  try {
+    // Verify the reset token
+    const { error } = passwordSchema.validate({ newPassword });
+    if (error) {
+      return res.status(400).json({
+        error: error.details[0].message,
+      });
+    }
+
+    const user = await User.findById(req.user.id); // Get the user based on the ID in the token
+
+    console.log('user', user)
+    console.log('req.user.id', req.user.id)
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Invalid token or user not found.' });
+    }
+
+    // Hash the new password before saving it
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update the user's password
+    user.password = hashedPassword;
+    await user.save();
+
+    return res.status(200).json({
+      user: user,
+      success: true,
+      message: 'Password has been reset successfully.',
+    });
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while resetting the password.',
+    });
+  }
+};
+
+

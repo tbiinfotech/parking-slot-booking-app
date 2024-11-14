@@ -12,6 +12,8 @@ import ParkingDetails from '../pages/spaces/ParkingDetails';
 import LinkBankAccount from '../pages/account/LinkBankAccount';
 import Payments from '../pages/payments/Payments';
 import UserSetting from '../pages/setting/UserSetting'
+import UserProfile from '../pages/setting/UserProfile'
+
 
 const router = createBrowserRouter([
     {
@@ -83,6 +85,16 @@ const router = createBrowserRouter([
             element={
                 <MainLayout>
                     <UserSetting />
+                </MainLayout>
+            }
+        />,
+    },
+    {
+        path: "profile",
+        element: <ProtectedRoute
+            element={
+                <MainLayout>
+                    <UserProfile />
                 </MainLayout>
             }
         />,
