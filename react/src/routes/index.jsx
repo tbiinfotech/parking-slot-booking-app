@@ -11,6 +11,7 @@ import CreateAdmin from '../pages/createAdmin/CreateAdmin';
 import ParkingDetails from '../pages/spaces/ParkingDetails';
 import LinkBankAccount from '../pages/account/LinkBankAccount';
 import Payments from '../pages/payments/Payments';
+import UserSetting from '../pages/setting/UserSetting'
 
 const router = createBrowserRouter([
     {
@@ -71,6 +72,17 @@ const router = createBrowserRouter([
             element={
                 <MainLayout>
                     <Payments />
+                </MainLayout>
+            }
+        />,
+    },
+
+    {
+        path: "user-setting",
+        element: <ProtectedRoute
+            element={
+                <MainLayout>
+                    <UserSetting />
                 </MainLayout>
             }
         />,

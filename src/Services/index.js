@@ -14,6 +14,7 @@ const ListingController = require('./Controllers/listingController')
 const BookingController = require('./Controllers/BookingController')
 const PaymentController = require('./Controllers/PaymentController')
 const TransactionController = require('./Controllers/TransactionController')
+const StripeKeysController = require('./Controllers/StripeKyeController')
 
 /*** Auth Routers ***/
 router.post("/api/sign-in", AuthController.SignIn);
@@ -27,7 +28,7 @@ router.post("/api/resend-otp", AuthController.resendOtp);
 /*** Admin ***/
 router.post("/api/create-user", UserController.createUser);
 router.get("/api/get-user", authorize(), UserController.getUser);
-router.get('/api/get-users', authorize(),UserController.getUsersWithPagination);
+router.get('/api/get-users', authorize(), UserController.getUsersWithPagination);
 
 router.get("/api/users/:id", authorize(), UserController.getUserById);
 
@@ -113,7 +114,9 @@ router.get('/api/test', BookingController.test)
 router.get('/api/transactions', TransactionController.getAllTransactions)
 router.post('/api/transactions', TransactionController.createTransaction)
 
+/*** Payment controller ***/
 
+router.post('/api/save-stripe-keys', StripeKeysController.saveStripeKeys);
 
 
 
