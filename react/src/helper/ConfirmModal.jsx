@@ -17,7 +17,9 @@ const style = {
     ':focus-visible': { outline: 'none' }
 };
 
-function ConfirmModal({ open, setOpen, type }) {
+function ConfirmModal({ open, setOpen, type, onDeleteSelected, selectedUsers }) {
+
+    console.log('open', open)
     const dispatch = useDispatch()
     const { token } = useSelector(state => state.auth);
     const { actionLoading } = useSelector(state => state.customers);
@@ -27,6 +29,9 @@ function ConfirmModal({ open, setOpen, type }) {
     const handleConfirm = () => {
         if (type == 'list') {
             dispatch(deleteListing({ listId: open, token }))
+        } else if (type == 'user') {
+            onDeleteSelected(selectedUsers);
+            setSelectedUsers([]);
         } else {
             dispatch(deleteCustomer({ userId: open, token }))
         }

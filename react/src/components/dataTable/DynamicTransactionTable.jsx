@@ -15,7 +15,7 @@ const statusStyle = (status) => {
     };
 };
 
-const headings = ["Transaction ID", "Date", "Customer Name", "Host Name", "Listing", "Amount"];
+const headings = ["SNo", "Transaction ID", "Customer Name", "Host Name", "Listing", "Amount", "Date"];
 
 function DynamicTransactionTable({ data, setDeleteUser }) {
 
@@ -43,11 +43,13 @@ function DynamicTransactionTable({ data, setDeleteUser }) {
             <Tbody className='table-body'>
                 {data.map((item, index) => (<Tr key={index} className='row'>
                     <Td className='sr-no'>{index + 1}.</Td>
-                    <Td className='name'>{formatDate(item.date)}</Td>
+                    <Td className='name'>{item?.transactionId}</Td>
                     <Td className='name'>{item?.customerName}</Td>
                     <Td className='email'>{item?.hostName}</Td>
                     <Td className='age'>{item?.listingTitle}</Td>
-                    <Td className='age'>{item?.amount}</Td>
+                    <Td className='age'>{item?.amount} $</Td>
+                    <Td className='name'>{formatDate(item.date)}</Td>
+
                 </Tr>))}
             </Tbody>
         </Table>

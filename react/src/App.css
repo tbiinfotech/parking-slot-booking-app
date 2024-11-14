@@ -53,7 +53,7 @@ header.header_main {
   height: 100%;
   line-height: 1;
   max-width: 312px;
-  background-color: #3621A0;
+  background-color: #FFFF;
   justify-content: center;
   align-items: center;
 }
@@ -107,7 +107,7 @@ header.header_main {
 .layout_inner .page_with_sidebar .sidebar_main {
   width: 100%;
   max-width: 312px;
-  background: #3621A0;
+  background: #FFFFFF;
   min-height: calc(100vh - 100px);
 }
 
@@ -457,12 +457,12 @@ div.dt-container div.dt-layout-row {
 
 .sidebar-menu-list .MuiButtonBase-root.list-item.active {
   height: 60px;
-  background-color: #fff;
+  background-color: #3621a0;
   width: 100%;
 }
 
 .sidebar-menu-list .MuiButtonBase-root.list-item .MuiListItemText-root.list-text .MuiTypography-root {
-  color: #fff;
+  color: #202420;
   font-size: 16px;
   display: inline-block;
   font-weight: 500;
@@ -471,7 +471,7 @@ div.dt-container div.dt-layout-row {
 }
 
 .sidebar-menu-list .MuiButtonBase-root.list-item.active .MuiListItemText-root.list-text .MuiTypography-root {
-  color: #3621A0;
+  color: #fff;
 }
 
 /* .sidebar-menu-list .MuiButtonBase-root.list-item.active .MuiListItemText-root.list-icon svg path {

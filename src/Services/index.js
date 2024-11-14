@@ -43,6 +43,11 @@ router.delete(
   UserController.deleteUser
 );
 
+router.post(
+  "/api/delete-users",
+  UserController.deleteUsersWithPagination
+);
+
 
 /*** Space listing/creating ***/
 

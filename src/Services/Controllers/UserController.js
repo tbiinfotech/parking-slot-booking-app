@@ -279,3 +279,65 @@ module.exports.deleteUser = async (req, res, next) => {
 
 
 
+module.exports.deleteUsersWithPagination = async (req, res, next) => {
+  try {
+    const { userIds } = req.body;  // Array of user IDs to delete
+    const page = parseInt(req.query.page) || 1; // Default to page 1
+    const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page
+    const skip = (page - 1) * limit;
+
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.json({
+        status: 400,
+        success: false,
+        message: "No user IDs provided",
+      });
+    }
+
+    // Mark users as deleted
+    await User.updateMany(
+      { _id: { $in: userIds }, email: { $ne: 'admin@gmail.com' } },
+      { $set: { isDeleted: true } }
+    );
+
+    // Define filter to exclude deleted users and the admin email
+    const filter = {
+      email: { $ne: 'admin@gmail.com' },
+      isDeleted: { $ne: true },
+    };
+
+    // Fetch users with updated filter and pagination
+    const users = await User.find(filter)
+      .skip(skip)
+      .limit(limit);
+
+    // Get the total count for pagination info
+    const totalUsers = await User.countDocuments(filter);
+    const totalPages = Math.ceil(totalUsers / limit);
+
+    return res.json({
+      status: 200,
+      data: {
+        records: users,
+        pagination: {
+          totalUsers,
+          totalPages,
+          currentPage: page,
+          limit,
+        },
+      },
+      success: true,
+      message: "Users deleted and data refreshed",
+    });
+  } catch (error) {
+    console.error("Error while trying to delete users and fetch data:", error);
+    return res.json({
+      status: 400,
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
+

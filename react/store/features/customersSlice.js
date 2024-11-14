@@ -55,6 +55,35 @@ export const fetchCustomers = createAsyncThunk(
     }
 );
 
+export const deleteCustomers = createAsyncThunk(
+    'customers/deleteCustomers',
+    async ({ userIds, token, page, limit }, { dispatch, rejectWithValue }) => {
+        try {
+            let query = `/?page=${encodeURIComponent(page || 1)}&limit=${encodeURIComponent(limit || 10)}`
+            if (status) {
+                query += `&status=${encodeURIComponent(status)}`
+            }
+            // Make API call to delete selected users
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/delete-users${query}`, { userIds }, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            const { data, success, message } = response.data;
+            if (!success) {
+                toast.error(message || 'Failed to delete users!');
+                return rejectWithValue(message || 'Failed to delete users!');
+            }
+            toast.success('Selected users deleted successfully!');
+            return userIds; // Return the IDs of deleted users for further use if needed
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to delete users!');
+            return rejectWithValue(error.response?.data?.message || 'Failed to delete users!');
+        }
+    }
+);
+
 
 export const fetchTransaction = createAsyncThunk(
     'customers/fetchTransaction',
@@ -253,10 +282,24 @@ const customersSlice = createSlice({
                 state.error = null;
             })
             .addCase(deleteCustomer.fulfilled, (state, action) => {
+                console.log('state', state.data.records)
                 state.actionLoading = false;
-                state.data = state.data.filter(item => item._id !== action.payload);
+                state.data.records = state.data.records.filter(item => item._id !== action.payload);
             })
             .addCase(deleteCustomer.rejected, (state, action) => {
+                state.actionLoading = false;
+                state.error = action.payload;
+            }).addCase(deleteCustomers.pending, (state) => {
+                state.actionLoading = true;
+                state.error = null;
+            })
+            .addCase(deleteCustomers.fulfilled, (state, action) => {
+                state.actionLoading = false;
+                console.log('state.data', state.data)
+                const deletedIds = action.payload; // Array of deleted customer IDs
+                state.data.records = state.data.records.filter(item => !deletedIds.includes(item._id)); // Remove items with matching IDs
+            })
+            .addCase(deleteCustomers.rejected, (state, action) => {
                 state.actionLoading = false;
                 state.error = action.payload;
             })

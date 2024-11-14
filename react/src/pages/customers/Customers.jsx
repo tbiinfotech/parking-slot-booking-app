@@ -3,7 +3,7 @@ import { Box, Tab, Tabs, Typography, Pagination, PaginationItem } from '@mui/mat
 import PropTypes from 'prop-types';
 import DynamicTable from '../../components/dataTable/DynamicTable'
 import ConfirmModal from '../../helper/ConfirmModal';
-import { fetchCustomers } from '../../../store/features/customersSlice';
+import { fetchCustomers, deleteCustomers } from '../../../store/features/customersSlice';
 import { useDispatch, useSelector } from 'react-redux';
 
 
@@ -52,7 +52,7 @@ function Customers() {
   const { data } = useSelector(state => state.customers);
   const dispatch = useDispatch();
   // const navigate = useNavigate();
-
+  const [selectedUsers, setSelectedUsers] = useState([]);
   useEffect(() => {
     if (!effectRan.current) {
       dispatch(fetchCustomers({ token, page: 1, limit: 10 }));
@@ -83,6 +83,23 @@ function Customers() {
     dispatch(fetchCustomers({ token, page: 1, limit: 10, status }));
   };
 
+  const handleDeleteSelectedUsers = async (userIds) => {
+    try {
+
+      console.log('usersIds', userIds)
+      dispatch(deleteCustomers({ userIds, token, page: currentPage, limit: 10 }));
+      if (data) {
+        const { records, pagination } = data;
+        setData(records || []);
+        setTotalPages(pagination?.totalPages || 1);
+        setCurrentPage(pagination?.currentPage || 1);
+      }
+
+    } catch (error) {
+      console.error("Error deleting selected users", error);
+    }
+  };
+
   return (
     <Box className={'customers'}>
       <Box className="page_title" sx={{ p: 0 }}>
@@ -92,7 +109,7 @@ function Customers() {
       </Box>
       <Box className={`pages_inner`} >
         <Box sx={{ width: '100%' }} className='page_tabs'>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          {/* <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs
               value={value}
               onChange={handleChange}
@@ -110,7 +127,7 @@ function Customers() {
                 />
               ))}
             </Tabs>
-          </Box>
+          </Box> */}
           {tabValues.map((_, index) => (
             <CustomTabPanel
               key={index}
@@ -119,7 +136,11 @@ function Customers() {
               className="tab_pannels"
             >
               {index === 0 && (
-                <DynamicTable data={records} setDeleteUser={setDeleteUser} />
+                <DynamicTable data={records} setDeleteUser={setDeleteUser} onDeleteSelected={handleDeleteSelectedUsers}
+
+                  selectedUsers={selectedUsers}
+                  setSelectedUsers={setSelectedUsers}
+                />
               )}
               {index === 1 && (
                 <DynamicTable data={records.filter(item => item.status === 'active')} setDeleteUser={setDeleteUser} />
@@ -141,7 +162,10 @@ function Customers() {
           />
         </Box>}
       </Box>
-      <ConfirmModal open={deleteUser} setOpen={setDeleteUser} />
+      <ConfirmModal open={deleteUser} setOpen={setDeleteUser} type={'user'} onDeleteSelected={handleDeleteSelectedUsers}
+        selectedUsers={selectedUsers}
+        setSelectedUsers={setSelectedUsers}
+      />
     </Box>
   )
 }

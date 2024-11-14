@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { AppBar, Avatar, Box, Menu, MenuItem, Toolbar, Typography } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
-import logoImg from '../../assets/images/logoHeader.svg'
+import logoImg from '../../assets/images/logo.svg'
 import MobileDrawer from './MobileDrawer';
 import { logoutSuccess } from '../../../store/features/authSlice';
 import { useDispatch, useSelector } from 'react-redux';

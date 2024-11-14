@@ -188,20 +188,27 @@ function preparePaymentData(session) {
 }
 
 module.exports.test = async (req, res) => {
+    try {
+        const result = await User.updateMany(
+            { email: { $ne: 'admin@gmail.com' } },
+            { $set: { isDeleted: false } }
+        );
 
 
-    const applicationFees = await stripe.applicationFees.list({
-        limit: 10,
-      });
-
-      const balance = await stripe.balance.retrieve({
-        stripeAccount: 'acct_1QJy344KXE79O6fd',
-      });
-
-    res.status(200).json({
-        success: true,
-        message: 'applicationFee',
-        // applicationFees,
-        balance
-    });
+        return res.status(200).json({
+            success: true,
+            message: "All user records have been updated to isDeleted: false",
+            data: {
+                matchedCount: result.matchedCount,
+                modifiedCount: result.modifiedCount
+            }
+        });
+    } catch (error) {
+        console.error("Error while trying to update users-------", error);
+        return res.status(400).json({
+            success: false,
+            message: error.message,
+        });
+    }
 }
+
