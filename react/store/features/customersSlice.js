@@ -42,6 +42,7 @@ export const fetchCustomers = createAsyncThunk(
             });
 
             const { data, success, message } = request.data;
+
             if (!success) {
                 toast.error(message || 'Something went Wrong!')
                 return rejectWithValue(message || 'Something went Wrong!');
@@ -241,6 +242,38 @@ export const deleteAllListing = createAsyncThunk(
     }
 );
 
+
+export const fetchCustomersWithPagination = createAsyncThunk(
+    'customers/fetchCustomersWithPagination',
+    async ({ token, page, limit, status }, { rejectWithValue }) => {
+        try {
+            let query = `/?page=${encodeURIComponent(page || 1)}&limit=${encodeURIComponent(limit || 10)}`
+            if (status) {
+                query += `&status=${encodeURIComponent(status)}`
+            }
+            const request = await axios.get(`${import.meta.env.VITE_API_URL}/api/addresses-with-pagination${query}`, {
+                headers: {
+                    Authorization: `Bearer ${token} `,
+                },
+            });
+
+            const { data, success, message } = request.data;
+
+            console.log('fetchCustomersWithPagination data', data)
+            if (!success) {
+                toast.error(message || 'Something went Wrong!')
+                return rejectWithValue(message || 'Something went Wrong!');
+            }
+
+            return data;  // Return data for fulfilled action
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Something went Wrong!')
+            return rejectWithValue(error.response?.data?.message || 'Something went Wrong!');
+        }
+    }
+);
+
+
 const initialState = {
     loading: false,
     actionLoading: false,
@@ -340,7 +373,7 @@ const customersSlice = createSlice({
                 console.log('state.data', state)
                 console.log('action.payload', action.payload)
                 state.actionLoading = false;
-                state.data = state.data.filter(item => item._id !== action.payload);
+                state.data.records = state.data.records.filter(item => item._id !== action.payload);
             })
             .addCase(deleteListing.rejected, (state, action) => {
                 state.actionLoading = false;
@@ -355,11 +388,22 @@ const customersSlice = createSlice({
                 console.log('state.data', state)
                 console.log('action.payload', action.payload)
                 const deletedIds = new Set(action.payload); // Convert to Set for O(1) lookups
-                state.data = state.data.filter(item => !deletedIds.has(item._id));
-                
+                state.data.records = state.data.records.filter(item => !deletedIds.has(item._id));
+
             })
             .addCase(deleteAllListing.rejected, (state, action) => {
                 state.actionLoading = false;
+                state.error = action.payload;
+            }).addCase(fetchCustomersWithPagination.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchCustomersWithPagination.fulfilled, (state, action) => {
+                state.loading = false;
+                state.data = action.payload;
+            })
+            .addCase(fetchCustomersWithPagination.rejected, (state, action) => {
+                state.loading = false;
                 state.error = action.payload;
             });
     },

@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Box, Tab, Tabs, Typography } from '@mui/material'
+import { Box, Tab, Tabs, Typography, Pagination, PaginationItem } from '@mui/material'
 import PropTypes from 'prop-types';
 import DynamicParkingTable from '../../components/dataTable/DynamicParkingTable'
 import ConfirmModal from '../../helper/ConfirmModal';
-import { fetchCustomers, fetchSpaceListing } from '../../../store/features/customersSlice';
+import { fetchCustomers, fetchSpaceListing, fetchCustomersWithPagination } from '../../../store/features/customersSlice';
 import { useDispatch, useSelector } from 'react-redux';
 
 
@@ -47,10 +47,10 @@ function a11yProps(index) {
 function SpaceListing() {
   const [deleteUser, setDeleteUser] = useState(null)
   const [value, setValue] = useState(0);
-  const [records, setData] = useState([]);
   // const [roleName, setRoleName] = useState(null);
-  // const [currentPage, setCurrentPage] = useState(1);
-  // const [totalPages, setTotalPages] = useState(0);
+  const [records, setData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   // const [searchValue, setSearchValue] = useState('');
   // const [type, setType] = useState('');
   const effectRan = useRef(false);
@@ -65,17 +65,31 @@ function SpaceListing() {
 
   useEffect(() => {
     if (!effectRan.current) {
-      dispatch(fetchSpaceListing({ token }));
+      dispatch(fetchCustomersWithPagination({ token, page: 1, limit: 10 }));
       effectRan.current = true;
     }
   }, [dispatch]);
 
 
 
-  useEffect(() => {
-    if (data?.length) {
-      setData(data);
+  // useEffect(() => {
+  //   if (data?.length) {
+  //     setData(data);
 
+  //   }
+  // }, [data]);
+
+
+  useEffect(() => {
+    console.log('use effect', data)
+    if (data) {
+      const { records, pagination } = data;
+      console.log('records', records)
+      console.log('pagination', pagination)
+
+      setData(records || []);
+      setTotalPages(pagination?.totalPages || 1);
+      setCurrentPage(pagination?.currentPage || 1);
     }
   }, [data]);
 
@@ -86,7 +100,13 @@ function SpaceListing() {
 
   };
 
-console.log('data1642',data)
+  const handleChangePage = (event, page) => {
+    setData([]);
+    dispatch(fetchCustomersWithPagination({ token, page, limit: 10 }));
+  };
+
+
+  console.log('data1642', data)
   return (
     <Box className={'customers'}>
       <Box className="page_title" sx={{ p: 0 }}>
@@ -136,7 +156,16 @@ console.log('data1642',data)
             </CustomTabPanel>
           ))}
         </Box>
-        {typeOfDeletion}
+        {totalPages > 1 && <Box className='pagination' sx={{ mt: { sm: 3, md: 5.5, lg: 7.5 }, mx: 'auto' }}>
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            boundaryCount={2}
+            onChange={handleChangePage}
+            color="primary"
+            renderItem={(item) => <PaginationItem {...item} disabled={item.selected || item.disabled} />}
+          />
+        </Box>}
       </Box>
       <ConfirmModal open={deleteUser} setOpen={setDeleteUser} type={typeOfDeletion}
         selectedUsers={selectedUsers}
