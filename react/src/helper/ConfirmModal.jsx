@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Box, Button, CircularProgress, IconButton, Modal } from '@mui/material';
 import { Close } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
-import { deleteCustomer, deleteListing } from '../../store/features/customersSlice';
+import { deleteCustomer, deleteListing, deleteAllListing } from '../../store/features/customersSlice';
 
 const style = {
     position: 'absolute',
@@ -17,7 +17,7 @@ const style = {
     ':focus-visible': { outline: 'none' }
 };
 
-function ConfirmModal({ open, setOpen, type, onDeleteSelected, selectedUsers }) {
+function ConfirmModal({ open, setOpen, type, onDeleteSelected, selectedUsers, setSelectedUsers }) {
 
     console.log('open', open)
     const dispatch = useDispatch()
@@ -27,11 +27,16 @@ function ConfirmModal({ open, setOpen, type, onDeleteSelected, selectedUsers }) 
 
 
     const handleConfirm = () => {
-        if (type == 'list') {
+
+        console.log('type', type)
+        if (type == 'deleteSpace') {
+            console.log('deleteSpace open', open)
             dispatch(deleteListing({ listId: open, token }))
         } else if (type == 'user') {
             onDeleteSelected(selectedUsers);
             setSelectedUsers([]);
+        } else if (type == 'deleteAllSpace') {
+            dispatch(deleteAllListing({ listIds: selectedUsers, token }))
         } else {
             dispatch(deleteCustomer({ userId: open, token }))
         }

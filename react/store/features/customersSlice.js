@@ -85,6 +85,8 @@ export const deleteCustomers = createAsyncThunk(
 );
 
 
+
+
 export const fetchTransaction = createAsyncThunk(
     'customers/fetchTransaction',
     async ({ token }, { rejectWithValue }) => {
@@ -212,6 +214,33 @@ export const deleteListing = createAsyncThunk(
     }
 );
 
+export const deleteAllListing = createAsyncThunk(
+    'customers/deleteAllListing',
+    async ({ listIds, token }, { rejectWithValue }) => {
+        try {
+            const request = await axios.post(`${import.meta.env.VITE_API_URL}/api/deleteListing`, { listIds }, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            console.log('request', request);
+
+            const { success, message } = request.data;
+            if (!success) {
+                toast.error(message || 'Something went Wrong1!')
+                return rejectWithValue(message || 'Something went Wrong!');
+            }
+            toast.success(message || 'User deleted')
+
+            return listIds;  // Return data for fulfilled action
+        } catch (error) {
+            console.log('error', error)
+            toast.error(error.response?.data?.message || 'Something went Wrong2!')
+            return rejectWithValue(error.response?.data?.message || 'Something went Wrong!');
+        }
+    }
+);
+
 const initialState = {
     loading: false,
     actionLoading: false,
@@ -308,10 +337,28 @@ const customersSlice = createSlice({
                 state.error = null;
             })
             .addCase(deleteListing.fulfilled, (state, action) => {
+                console.log('state.data', state)
+                console.log('action.payload', action.payload)
                 state.actionLoading = false;
                 state.data = state.data.filter(item => item._id !== action.payload);
             })
             .addCase(deleteListing.rejected, (state, action) => {
+                state.actionLoading = false;
+                state.error = action.payload;
+            })
+            .addCase(deleteAllListing.pending, (state) => {
+                state.actionLoading = true;
+                state.error = null;
+            })
+            .addCase(deleteAllListing.fulfilled, (state, action) => {
+                state.actionLoading = false;
+                console.log('state.data', state)
+                console.log('action.payload', action.payload)
+                const deletedIds = new Set(action.payload); // Convert to Set for O(1) lookups
+                state.data = state.data.filter(item => !deletedIds.has(item._id));
+                
+            })
+            .addCase(deleteAllListing.rejected, (state, action) => {
                 state.actionLoading = false;
                 state.error = action.payload;
             });

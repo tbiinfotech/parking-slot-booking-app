@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Box, Tab, Tabs, Typography } from '@mui/material'
 import PropTypes from 'prop-types';
-import DynamicTable from '../../components/dataTable/DynamicParkingTable'
+import DynamicParkingTable from '../../components/dataTable/DynamicParkingTable'
 import ConfirmModal from '../../helper/ConfirmModal';
 import { fetchCustomers, fetchSpaceListing } from '../../../store/features/customersSlice';
 import { useDispatch, useSelector } from 'react-redux';
@@ -58,6 +58,10 @@ function SpaceListing() {
   const { data } = useSelector(state => state.customers);
   const dispatch = useDispatch();
   // const navigate = useNavigate();
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [typeOfDeletion, setTypeOfDeletion] = useState('');
+
+
 
   useEffect(() => {
     if (!effectRan.current) {
@@ -82,7 +86,7 @@ function SpaceListing() {
 
   };
 
-
+console.log('data1642',data)
   return (
     <Box className={'customers'}>
       <Box className="page_title" sx={{ p: 0 }}>
@@ -118,19 +122,28 @@ function SpaceListing() {
               className="tab_pannels"
             >
               {index === 0 && (
-                <DynamicTable data={records} setDeleteUser={setDeleteUser} />
+                <DynamicParkingTable data={records} setDeleteUser={setDeleteUser} selectedUsers={selectedUsers} setSelectedUsers={setSelectedUsers}
+                  typeOfDeletion={typeOfDeletion}
+                  setTypeOfDeletion={setTypeOfDeletion}
+                />
               )}
               {index === 1 && (
-                <DynamicTable data={records.filter(item => item.status === 'active')} setDeleteUser={setDeleteUser} />
+                <DynamicParkingTable data={records.filter(item => item.status === 'active')} setDeleteUser={setDeleteUser} />
               )}
               {index === 2 && (
-                <DynamicTable data={records.filter(item => item.status === 'inactive')} setDeleteUser={setDeleteUser} />
+                <DynamicParkingTable data={records.filter(item => item.status === 'inactive')} setDeleteUser={setDeleteUser} />
               )}
             </CustomTabPanel>
           ))}
         </Box>
+        {typeOfDeletion}
       </Box>
-      <ConfirmModal open={deleteUser} setOpen={setDeleteUser} type={'list'}/>
+      <ConfirmModal open={deleteUser} setOpen={setDeleteUser} type={typeOfDeletion}
+        selectedUsers={selectedUsers}
+        setSelectedUsers={setSelectedUsers}
+
+
+      />
     </Box>
   )
 }
