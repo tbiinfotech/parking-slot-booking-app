@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const User = require("../models/users");
 const Listing = require("../models/Listing");
+const PendingUser = require("../models/pendingUsers")
 
 const Joi = require('joi');
 const jwt = require("jsonwebtoken");
@@ -12,6 +13,9 @@ const errorHandling = require('../../libs/errorHandling')
 const mongoose = require("mongoose");
 
 const { SendEmail } = require('../../libs/Helper')
+
+const { TWILIO_SERVICE_SID, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN } = process.env;
+const client = require('twilio')(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 
 module.exports.getUser = async (req, res, next) => {
   try {
@@ -35,9 +39,6 @@ module.exports.getUser = async (req, res, next) => {
     });
   }
 };
-
-
-
 
 module.exports.getUsersWithPagination = async (req, res, next) => {
   try {
@@ -85,8 +86,6 @@ module.exports.getUsersWithPagination = async (req, res, next) => {
   }
 };
 
-
-
 module.exports.getUserById = async (req, res) => {
   try {
 
@@ -123,13 +122,14 @@ module.exports.getUserById = async (req, res) => {
 module.exports.createUser = async (req, res, next) => {
   console.log("-----create_user------");
   try {
-    let { name, email, password, confirmPassword, phoneNumber } = req.body;
+    let { name, email, password, phoneNumber } = req.body;
     const { error } = userSchema.validate(req.body);
 
     if (error) {
-      return res.status(400).json({ error: error.details[0].message });
+      return res.status(400).json({ success: false, message: error.details[0].message });
     }
 
+    // Check if the email already exists in the main Users collection
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({
@@ -138,38 +138,44 @@ module.exports.createUser = async (req, res, next) => {
       });
     }
 
-    // Hash password
-    if (password) {
-      password = bcrypt.hashSync(password, bcrypt.genSaltSync(10), null);
+    // Check if the email is already in the PendingUser collection
+    const existingPendingUser = await PendingUser.findOne({ email });
+    if (existingPendingUser) {
+      // Remove expired pending user records
+      if (existingPendingUser.otpExpires < Date.now()) {
+        await PendingUser.deleteOne({ email });
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: "OTP already sent. Please verify the OTP or wait for it to expire.",
+        });
+      }
     }
 
+    // Hash password
+    const hashedPassword = bcrypt.hashSync(password, bcrypt.genSaltSync(10));
+
     // Generate and send OTP
-    const otp = generateOTP();
+    const otp = generateOTP(); // Assume this generates a 6-digit OTP
+    // await client.messages.create({
+    //   body: `Your OTP code is ${otp}. It will expire in 10 minutes.`,
+    //   from: '+13345186584',
+    //   to: phoneNumber,
+    // });
 
-    let mail_options = {
-      to: email,
-      subject: 'Your OTP Code',
-      text: `Your OTP code is ${otp}. It will expire in 10 minutes.`,
-      from: `${process.env.MAIL_USERNAME} <${process.env.MAIL_FROM_ADDRESS}>`,
-    };
-
-    await SendEmail(mail_options)
-      .then((info) => {
-        console.log("Nodemailer Email sent ---------- ", info.response);
-      })
-      .catch((error) => {
-        console.log("Nodemailer error ---------- ", error);
-      });
-
-    // Save OTP and user data temporarily
-    const newUser = await User.create({
-      name, email, password, phoneNumber, otp, otpExpires: Date.now() + 10 * 60 * 1000 // 10 minutes
+    // Save user data in the PendingUser collection
+    const pendingUser = await PendingUser.create({
+      name,
+      email,
+      password: hashedPassword,
+      phoneNumber,
+      otp,
+      otpExpires: Date.now() + 10 * 60 * 1000, // OTP valid for 10 minutes
     });
 
-    return res.json({
-      status: 200,
+    return res.status(200).json({
       success: true,
-      message: "OTP has been sent to your email.",
+      message: "OTP has been sent to your phone number.",
     });
   } catch (error) {
     console.error("Error in createUser:", error);

@@ -5,9 +5,17 @@ const crypto = require('crypto')
 const jwt = require("jsonwebtoken");
 const User = require("../models/users");
 const Otp = require("../models/otp");
+const PendingUser = require("../models/pendingUsers")
+
 const { signInSchema, emailSchema, passwordSchema } = require('../../libs/schemaValidation')
 const { SendEmail } = require('../../libs/Helper')
 const { generateOTP } = require('./../../../utills/authUtils')
+
+
+// const client = require('twilio')(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, { lazyLoading: true })
+
+const { TWILIO_SERVICE_SID, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN } = process.env;
+const client = require('twilio')(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 
 
 module.exports.SignIn = async (req, res, next) => {
@@ -38,7 +46,6 @@ module.exports.SignIn = async (req, res, next) => {
     var token = token = jwt.sign(
       { user_id: user_detail.id, role: user_detail.role },
       process.env.jwt_token_key,
-      { expiresIn: "8h" }
     );
 
     const userData = {
@@ -69,6 +76,67 @@ module.exports.SignIn = async (req, res, next) => {
 };
 
 module.exports.verifyOtp = async (req, res) => {
+  const { email, otp } = req.body;
+
+  try {
+    // Check if the user exists in the PendingUser collection
+    const pendingUser = await PendingUser.findOne({ email });
+
+    if (!pendingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "User not found or registration not initiated.",
+      });
+    }
+
+    // Check if OTP matches and if it has expired
+    if (pendingUser.otp !== otp || pendingUser.otpExpires < Date.now()) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP is incorrect or has expired.",
+      });
+    }
+
+    // OTP is correct, move the pending user to the main User collection
+    const { name, phoneNumber, password } = pendingUser;
+
+    // Create a new user record in the User collection
+    const newUser = new User({
+      name,
+      email,
+      password,
+      phoneNumber,
+      isVerified: true, // Mark as verified
+    });
+
+    await newUser.save();
+
+    // Remove the user from PendingUser collection
+    await PendingUser.deleteOne({ email });
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { user_id: newUser._id, role: "user" },
+      process.env.jwt_token_key,
+      { expiresIn: "8h" }
+    );
+
+    return res.json({
+      status: 200,
+      success: true,
+      token,
+      message: "Your account has been verified successfully.",
+    });
+  } catch (error) {
+    console.error("Error in verifyOtp:", error);
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred during OTP verification.",
+    });
+  }
+};
+
+module.exports.verifyForgotOtp = async (req, res) => {
   const { email, otp } = req.body;
 
   try {
@@ -119,11 +187,9 @@ module.exports.verifyOtp = async (req, res) => {
   }
 };
 
-
 module.exports.ForgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-
     const { error } = emailSchema.validate({ email });
     if (error) {
       return res.status(400).json({ error: error.details[0].message });
@@ -159,26 +225,16 @@ module.exports.ForgotPassword = async (req, res) => {
     if (!updatedUser) {
       return res.status(500).json({ message: "Failed to update OTP" });
     }
-
     // Debugging logs to confirm
     console.log("Updated User:", updatedUser);
+    console.log("user.phoneNumber:", user.phoneNumber);
 
-
-
-    const mailOptions = {
-      to: email,
-      subject: "Password Reset OTP",
-      text: `Your OTP for password reset is ${otp}. It is valid for 10 minutes.`,
-      from: `${process.env.MAIL_USERNAME} <${process.env.MAIL_FROM_ADDRESS}>`,
-    };
-
-    await SendEmail(mailOptions)
-      .then((info) => {
-        console.log("Email sent: ", info.response);
-      })
-      .catch((error) => {
-        console.log("Email error: ", error);
-      });
+    /*
+        await client.messages.create({
+          body: `Your OTP for password reset is ${otp}. It is valid for 10 minutes.`,
+          from: '+13345186584',
+          to: user.phoneNumber,
+        });*/
 
     return res.status(200).json({ message: "OTP sent to your email", token });
   } catch (error) {
@@ -187,46 +243,36 @@ module.exports.ForgotPassword = async (req, res) => {
   }
 };
 
-
 module.exports.resendOtp = async (req, res, next) => {
   console.log("-----resendOtp------");
   try {
     let { email } = req.body;
 
-    const existingUser = await User.findOne({ email });
+    // Check if the user is in the PendingUser collection
+    const pendingUser = await PendingUser.findOne({ email });
 
-    if (!existingUser) {
+    if (!pendingUser) {
       return res.status(400).json({
         success: false,
-        message: "User not found",
+        message: "No pending registration found for this email.",
       });
     }
 
     // Generate and send OTP
     const otp = generateOTP();
 
-    let mail_options = {
-      to: email,
-      subject: 'Your OTP Code',
-      text: `Your OTP code is ${otp}. It will expire in 10 minutes.`,
-      from: `${process.env.MAIL_USERNAME} <${process.env.MAIL_FROM_ADDRESS}>`,
-    };
+    await client.messages.create({
+      body: `Your OTP for password reset is ${otp}. It is valid for 10 minutes. Please do not share it with anyone.`,
+      from: '+13345186584', // Replace with your actual Twilio phone number
+      to: pendingUser.phoneNumber,
+    });
 
-    await SendEmail(mail_options)
-      .then((info) => {
-        console.log("Nodemailer Email sent ---------- ", info.response);
-      })
-      .catch((error) => {
-        console.log("Nodemailer error ---------- ", error);
-      });
-
-
-    // Update OTP and expiration time
-    const updatedUser = await User.findOneAndUpdate(
+    // Update OTP and expiration time in PendingUser collection
+    const updatedPendingUser = await PendingUser.findOneAndUpdate(
       { email },
       {
         otp,
-        otpExpires: Date.now() + 10 * 60 * 1000, // 5 minutes expiration
+        otpExpires: Date.now() + 10 * 60 * 1000, // 10 minutes expiration
       },
       { new: true } // Return the updated document
     );
@@ -234,10 +280,10 @@ module.exports.resendOtp = async (req, res, next) => {
     return res.json({
       status: 200,
       success: true,
-      message: "OTP has been sent to your email.",
+      message: "OTP has been resent to your phone number.",
     });
   } catch (error) {
-    console.error("Error in createUser:", error);
+    console.error("Error in resendOtp:", error);
     return res.status(500).json({
       success: false,
       message: "An error occurred while processing your request.",
@@ -287,8 +333,6 @@ module.exports.ResetPassword = async (req, res) => {
   }
 };
 
-
-
 module.exports.resetAdminPassword = async (req, res) => {
   const { newPassword } = req.body;
 
@@ -331,4 +375,50 @@ module.exports.resetAdminPassword = async (req, res) => {
   }
 };
 
+const otps = {};
 
+module.exports.sendOTP = async (req, res, next) => {
+  const { phoneNumber } = req.body;
+  const otp = Math.floor(100000 + Math.random() * 900000); // Generate a 6-digit OTP
+
+  // Store OTP in memory
+  otps[phoneNumber] = otp;
+
+  client.messages
+    .create({
+      body: 'OTP sent successfully',
+      from: '+13345186584',
+      to: phoneNumber
+    })
+    .then(message => console.log(message.sid));
+};
+
+module.exports.verifyOTP = async (req, res, next) => {
+  const { countryCode, phoneNumber, otp } = req.body;
+  try {
+    const verifiedResponse = await client.verify
+      .services(TWILIO_ACCOUNT_SID)
+      .verificationChecks.create({
+        to: `+${countryCode}${phoneNumber}`,
+        code: otp,
+      });
+    res.status(200).send(`OTP verified successfully!: ${JSON.stringify(verifiedResponse)}`)
+  }
+  catch (error) {
+    res.status(error?.status || 400).send(error?.message || 'Something went wrong!');
+  }
+}
+
+// module.exports.sendOTP = async (req, res, next) => {
+//   const { countryCode, phoneNumber } = req.body;
+//   try {
+//     const otpResponse = await client.verify
+//       .services(TWILIO_ACCOUNT_SID)
+//       .verifications.create({
+//         to: `+${countryCode}${phoneNumber}`, channel: "sms",
+//       });
+//     return res.status(200).send(`OTP send successfully!: ${JSON.stringify(otpResponse)}`);
+//   } catch (error) {
+//     return res.status(error?.status || 400).send(error?.message || 'Something went wrong!');
+//   }
+// };

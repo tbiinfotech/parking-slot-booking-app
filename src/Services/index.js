@@ -19,11 +19,16 @@ const StripeKeysController = require('./Controllers/StripeKyeController')
 /*** Auth Routers ***/
 router.post("/api/sign-in", AuthController.SignIn);
 router.post("/api/forget-password", AuthController.ForgotPassword);
-router.post("/api/verify-otp", AuthController.verifyOtp);
+// router.post("/api/verify-otp", AuthController.verifyOtp);
 
 router.post("/api/reset-password", AuthController.ResetPassword);
 router.post("/api/resend-otp", AuthController.resendOtp);
 router.post("/api/reset-admin-password", authorize(), AuthController.resetAdminPassword);
+
+/*twillio sms route*/
+router.post("/api/send-otp", AuthController.sendOTP)
+router.post("/api/verify-otp", AuthController.verifyOtp)
+router.post("/api/verify-forget-otp", AuthController.verifyForgotOtp)
 
 
 
