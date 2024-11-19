@@ -24,6 +24,57 @@ module.exports.getAllTransactions = async (req, res) => {
 };
 
 
+module.exports.getAllTransactionsWithPagination = async (req, res) => {
+    console.log('Fetching all transactions with pagination');
+
+    try {
+        const page = parseInt(req.query.page) || 1; // Default to page 1
+        const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page
+        const skip = (page - 1) * limit;
+
+        // Fetch transactions with pagination
+        const transactions = await Transaction.find()
+            .skip(skip)
+            .limit(limit);
+
+        // Get the total count of transactions
+        const totalTransactions = await Transaction.countDocuments();
+        const totalPages = Math.ceil(totalTransactions / limit);
+
+        // Check if transactions exist
+        if (transactions.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No transactions found',
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Transactions fetched successfully",
+            data: {
+                records: transactions,
+                pagination: {
+                    totalTransactions,
+                    totalPages,
+                    currentPage: page,
+                    limit,
+                },
+            },
+        });
+    } catch (error) {
+        console.error('Error fetching transactions:', error);
+
+        return res.status(500).json({
+            success: false,
+            message: "An error occurred while fetching transactions",
+            error: error.message || "Internal Server Error",
+        });
+    }
+};
+
+
+
 
 module.exports.createTransaction = async (req, res) => {
     const { 

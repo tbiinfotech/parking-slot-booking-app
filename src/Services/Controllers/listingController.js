@@ -145,6 +145,55 @@ exports.getAllAddresses = async (req, res) => {
     }
 };
 
+exports.getAllAddressesWithPaginagtion = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
+        const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page if not provided
+        const skip = (page - 1) * limit;
+
+        // Define your filter criteria (if needed, adjust it accordingly)
+        const filter = {}; // No specific filters are applied for now
+
+        // Fetch the listings with pagination
+        const listings = await Listing.find({}).populate('owner').skip(skip).limit(limit);
+
+        // Extract addresses from listings
+        const addresses = listings.map(listing => ({
+            address: listing.location.address,
+            coordinates: listing.location.coordinates,
+        }));
+
+        // Get the total count of listings for pagination info
+        const totalListings = await Listing.countDocuments(filter);
+        const totalPages = Math.ceil(totalListings / limit);
+
+        // Check if addresses were found
+        if (addresses.length === 0) {
+            return res.status(404).json({ success: false, message: 'No addresses found.' });
+        }
+
+        return res.json({
+            status: 200,
+            data: {
+                records: listings,
+                pagination: {
+                    totalListings,
+                    totalPages,
+                    currentPage: page,
+                    limit,
+                },
+            },
+            success: true,
+            message: "Data found",
+        });
+
+    } catch (error) {
+        console.error("Error while fetching addresses:", error);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+
 exports.getAddressByListId = async (req, res) => {
     try {
 
@@ -293,7 +342,7 @@ exports.removeListing = async (req, res) => {
 
 
 
- // Ensure fs module is required if you are deleting files
+// Ensure fs module is required if you are deleting files
 exports.editListing = async (req, res) => {
     try {
         const { listingId } = req.params;
@@ -390,6 +439,27 @@ exports.editListing = async (req, res) => {
 };
 
 
+
+exports.deleteAllListing = async (req, res) => {
+    const { listIds } = req.body
+    try {
+        const deleteListing = await Listing.deleteMany({ _id: { $in: listIds } })
+
+        return res.status(200).json({
+            message: "Space deleted successfully",
+            status: true,
+            success: true,
+            deleteListing
+        })
+
+    } catch (error) {
+        console.log('space all delete error :', error)
+        return res.status(500).json({
+            status: false,
+            message: 'Error in deleting multiple ids'
+        })
+    }
+}
 
 
 

@@ -23,7 +23,7 @@ router.post("/api/verify-otp", AuthController.verifyOtp);
 
 router.post("/api/reset-password", AuthController.ResetPassword);
 router.post("/api/resend-otp", AuthController.resendOtp);
-router.post("/api/reset-admin-password", authorize(),AuthController.resetAdminPassword);
+router.post("/api/reset-admin-password", authorize(), AuthController.resetAdminPassword);
 
 
 
@@ -71,6 +71,9 @@ router.post(
 router.get("/api/get-user-addresses", authorize(), ListingController.getUserAddresses);
 router.get("/api/addresses", authorize(), ListingController.getAllAddresses);
 router.get("/api/addresses/:listingId", authorize(), ListingController.getAddressByListId);
+router.get("/api/addresses-with-pagination", authorize(), ListingController.getAllAddressesWithPaginagtion);
+
+
 
 
 
@@ -83,7 +86,7 @@ router.put('/api/listings/status/:listingId', authorize(), ListingController.upd
 
 
 router.delete('/api/listings/:listingId', authorize(), ListingController.removeListing);
-
+router.post('/api/deleteListing', authorize(), ListingController.deleteAllListing);
 
 router.post(
   "/api/listings/:listingId",
