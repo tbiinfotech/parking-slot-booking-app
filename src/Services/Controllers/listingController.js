@@ -6,89 +6,80 @@ const fs = require('fs');
 
 // 1. Create a new listing
 exports.createListing = async (req, res) => {
+    console.log('#createListing')
     try {
-        // Trim values and parse numbers
-        const title = req.body.title?.trim();
-        const description = req.body.description?.trim();
-        const type = req.body.type?.trim();
-        const rentalParkingPlan = req.body.rentalParkingPlan;
-        const storagePlan = req.body.storagePlan;
-        const typeOfSpace = req.body.typeOfSpace?.trim();
-        const duration = req.body.duration?.trim();
+        const {
+            title,
+            description,
+            type,
+            plan,
+            price,
+            typeOfSpace,
+            location,
+            dimensions,
+            amenities,
+            vehicleType,
+            spaceType
+        } = req.body;
 
-        const location = {
-            address: req.body.location.address?.trim() || '',
+        // Parse and validate location
+        const parsedLocation = {
+            address: location?.address?.trim() || '',
             coordinates: [
-                parseFloat(req.body.location.coordinates[0]) || 0,  // Default to 0 if parsing fails
-                parseFloat(req.body.location.coordinates[1]) || 0   // Default to 0 if parsing fails
+                parseFloat(location?.coordinates?.[0]) || 0, // Default to 0 if parsing fails
+                parseFloat(location?.coordinates?.[1]) || 0  // Default to 0 if parsing fails
             ]
         };
 
-        const dimensions = {
-            length: parseFloat(req.body.dimensions.length) || 0,  // Default to 0 if parsing fails
-            width: parseFloat(req.body.dimensions.width) || 0,    // Default to 0 if parsing fails
-            height: parseFloat(req.body.dimensions.height) || 0   // Default to 0 if parsing fails
+        // Parse and validate dimensions
+        const parsedDimensions = {
+            length: parseFloat(dimensions?.length) || 0,
+            width: parseFloat(dimensions?.width) || 0,
+            height: dimensions?.height ? parseFloat(dimensions.height) : undefined
         };
 
         // Handle amenities as an array of strings
-        const amenities = Array.isArray(req.body.amenities)
-            ? req.body.amenities.map(a => a.trim()).filter(Boolean)  // Trim and filter out any empty values
+        const parsedAmenities = Array.isArray(amenities)
+            ? amenities.map(a => a.trim()).filter(Boolean) // Trim and filter empty values
             : [];
-
-        const vehicleType = req.body.vehicleType?.trim();
-        const spaceType = req.body.spaceType?.trim();
 
         // Handle photos if files are uploaded
         const photos = req.files ? req.files.map(file => file.path) : [];
 
-        // Parse and convert the rentalParkingPlan's price fields to numbers
-        if (rentalParkingPlan) {
-            if (rentalParkingPlan.hourly) {
-                rentalParkingPlan.hourly.price = parseFloat(rentalParkingPlan.hourly.price.trim()) || 0;
-            }
-            if (rentalParkingPlan.daily) {
-                rentalParkingPlan.daily.price = parseFloat(rentalParkingPlan.daily.price.trim()) || 0;
-            }
-            if (rentalParkingPlan.monthly) {
-                rentalParkingPlan.monthly.price = parseFloat(rentalParkingPlan.monthly.price.trim()) || 0;
-            }
-        }
-
-        // Validate required fields
-        const { error, value } = rentalListingSchema.validate({ title, description, type, rentalParkingPlan, storagePlan, typeOfSpace, location, dimensions, amenities, vehicleType, spaceType });
-        if (error) {
-            return res.status(400).json({
-                error: error.details[0].message,
-            });
-        }
-
-        // Create a new listing and save it to the database
+        // Create a new listing object
         const listing = new Listing({
-            owner: req.user.id,  // Assume user is authenticated and user ID is available
-            title,
-            description,
-            type,
-            rentalParkingPlan,
-            storagePlan,
-            typeOfSpace,
-            location,
-            duration,
-            dimensions,
-            amenities,
-            vehicleType,
-            spaceType,
+            owner: req.user.id, // Assume authenticated user's ID is available in `req.user`
+            title: title?.trim(),
+            description: description?.trim(),
+            type: type?.trim(),
+            plan: plan?.trim(),
+            price: price?.trim(),
+            typeOfSpace: typeOfSpace?.trim(),
+            location: parsedLocation,
+            dimensions: parsedDimensions,
+            amenities: parsedAmenities,
+            vehicleType: vehicleType?.trim(),
+            spaceType: spaceType?.trim(),
             photos
         });
 
+        // Save the listing to the database
         await listing.save();
-        res.status(201).json({ success: true, message: 'Listing created successfully', listing });
-    } catch (error) {
 
-        console.log('create space list error', error)
-        res.status(500).json({ success: false, message: error.message });
+        res.status(201).json({
+            success: true,
+            message: 'Listing created successfully',
+            listing
+        });
+    } catch (error) {
+        console.error('Error creating listing:', error);
+        res.status(500).json({
+            success: false,
+            message: 'An error occurred while creating the listing',
+            error: error.message
+        });
     }
 };
-
 
 exports.getUserAddresses = async (req, res) => {
     try {
@@ -439,6 +430,129 @@ exports.editListing = async (req, res) => {
 };
 
 
+exports.updateListing = async (req, res) => {
+    console.log('#updateListing');
+    try {
+        const { id } = req.params; // Get listing ID from URL parameters
+        const {
+            title,
+            description,
+            type,
+            plan,
+            price,
+            typeOfSpace,
+            location,
+            dimensions,
+            amenities,
+            vehicleType,
+            spaceType, status
+        } = req.body;
+
+        // Find the existing listing to handle photo deletion if needed
+        const listing = await Listing.findById(id);
+        if (!listing) {
+            return res.status(404).json({
+                success: false,
+                message: 'Listing not found'
+            });
+        }
+
+        // Parse and validate location
+        const parsedLocation = location ? {
+            address: location?.address?.trim() || '',
+            coordinates: [
+                parseFloat(location?.coordinates?.[0]) || 0, // Default to 0 if parsing fails
+                parseFloat(location?.coordinates?.[1]) || 0  // Default to 0 if parsing fails
+            ]
+        } : undefined;
+
+        // Parse and validate dimensions
+        const parsedDimensions = dimensions ? {
+            length: parseFloat(dimensions?.length) || 0,
+            width: parseFloat(dimensions?.width) || 0,
+            height: dimensions?.height ? parseFloat(dimensions.height) : undefined
+        } : undefined;
+
+        // Handle amenities as an array of strings
+        const parsedAmenities = Array.isArray(amenities)
+            ? amenities.map(a => a.trim()).filter(Boolean) // Trim and filter empty values
+            : undefined;
+
+        // Handle photos if files are uploaded
+        if (req.files && req.files.length > 0) {
+            // Delete old photos from the file system
+            listing.photos.forEach(photoPath => {
+                fs.unlink(photoPath, (err) => {
+                    if (err) console.error(`Failed to delete old photo at ${photoPath}:`, err);
+                });
+            });
+
+            // Add new photos
+            listing.photos = req.files.map(file => file.path);
+        }
+
+        console.log('typeOfSpace', typeOfSpace)
+        // Validate required fields
+        // const { error, value } = rentalListingSchema.validate({
+        //     title,
+        //     description,
+        //     type,
+        //     plan,
+        //     price,
+        //     typeOfSpace,
+        //     location,
+        //     dimensions,
+        //     amenities,
+        //     vehicleType,
+        //     spaceType,
+        //     status // Optional field
+        // });
+
+        // if (error) {
+        //     return res.status(400).json({
+        //         error: error.details[0].message,
+        //     });
+        // }
+
+        // Construct the update object
+        const updateData = {
+            ...(title && { title: title.trim() }),
+            ...(description && { description: description.trim() }),
+            ...(type && { type: type.trim() }),
+            ...(plan && { plan: plan.trim() }),
+            ...(price && { price: price.trim() }),
+            ...(typeOfSpace && { typeOfSpace: typeOfSpace.trim() }),
+            ...(location && { location: parsedLocation }),
+            ...(dimensions && { dimensions: parsedDimensions }),
+            ...(parsedAmenities && { amenities: parsedAmenities }),
+            ...(vehicleType && { vehicleType: vehicleType.trim() }),
+            ...(spaceType && { spaceType: spaceType.trim() }),
+            ...(req.files && req.files.length > 0 && { photos: listing.photos }) // Update photos if new ones were uploaded
+        };
+
+        // Update the listing in the database
+        const updatedListing = await Listing.findByIdAndUpdate(id, updateData, {
+            new: true, // Return the updated document
+            runValidators: true // Ensure validation runs on the updated data
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Listing updated successfully',
+            listing: updatedListing
+        });
+    } catch (error) {
+        console.error('Error updating listing:', error);
+        res.status(500).json({
+            success: false,
+            message: 'An error occurred while updating the listing',
+            error: error.message
+        });
+    }
+};
+
+
+
 
 exports.deleteAllListing = async (req, res) => {
     const { listIds } = req.body
@@ -497,5 +611,69 @@ exports.searchListings = async (req, res) => {
         res.status(200).json({ success: true, listings });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+
+function haversine(lat1, lon1, lat2, lon2) {
+    const R = 3959; // Radius of the Earth in miles
+    const phi1 = lat1 * Math.PI / 180;
+    const phi2 = lat2 * Math.PI / 180;
+    const deltaPhi = (lat2 - lat1) * Math.PI / 180;
+    const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+
+    const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+        Math.cos(phi1) * Math.cos(phi2) *
+        Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // Distance in miles
+}
+
+
+exports.getListingsWithinRadius = async (req, res) => {
+    try {
+        const { latitude, longitude, radiusInMiles } = req.body;
+
+        // Validate inputs
+        if (!latitude || !longitude || !radiusInMiles) {
+            return res.status(400).json({
+                success: false,
+                message: "Please provide latitude, longitude, and radiusInMiles.",
+            });
+        }
+
+        // Log the coordinates being passed
+        console.log("Querying listings around coordinates:", [longitude, latitude]);
+
+        // Fetch all listings
+        const listings = await Listing.find();
+
+        // Filter listings based on distance using Haversine formula
+        const nearbyListings = listings.filter(listing => {
+            const listingLat = listing.location.coordinates[1]; // latitude
+            const listingLon = listing.location.coordinates[0]; // longitude
+            const distance = haversine(latitude, longitude, listingLat, listingLon);
+            return distance <= radiusInMiles;
+        });
+
+        // Check if any listings are found
+        if (nearbyListings.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "No listings found within the specified radius.",
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            listings: nearbyListings
+        });
+    } catch (error) {
+        console.error('Error in getListingsWithinRadius:', error);
+        return res.status(500).json({
+            success: false,
+            message: "An error occurred while fetching listings.",
+        });
     }
 };

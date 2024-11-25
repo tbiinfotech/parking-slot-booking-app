@@ -14,7 +14,7 @@ function generateUniqueToken() {
 
 // Generate an OTP
 const generateOTP = () => {
-  return crypto.randomInt(100000, 999999).toString();
+  return crypto.randomInt(10000, 99999).toString();
 };
 
 module.exports = {

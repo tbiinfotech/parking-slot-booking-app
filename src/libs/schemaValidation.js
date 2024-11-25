@@ -191,6 +191,7 @@ const createStorySchema = Joi.object({
 });
 
 
+
 const rentalListingSchema = Joi.object({
     title: Joi.string().min(1).required().messages({
         'string.base': 'Title must be a string',
@@ -203,138 +204,80 @@ const rentalListingSchema = Joi.object({
         'any.required': 'Description is required.',
     }),
     type: Joi.string().valid('Parking', 'Storage').required().messages({
-        'any.only': 'Type must be either "Parking" or "Storage"',
+        'any.only': 'Type must be either "Parking" or "Storage".',
         'any.required': 'Type is required.',
     }),
-    rentalParkingPlan: Joi.object({
-        hourly: Joi.object({
-            price: Joi.number().min(0).required().messages({
-                'number.base': 'Hourly price must be a number',
-                'number.min': 'Hourly price must be greater than or equal to 0.',
-                'any.required': 'Hourly price is required.'
-            })
-        }).optional(),
-        daily: Joi.object({
-            price: Joi.number().min(0).required().messages({
-                'number.base': 'Daily price must be a number',
-                'number.min': 'Daily price must be greater than or equal to 0.',
-                'any.required': 'Daily price is required.'
-            })
-        }).optional(),
-        monthly: Joi.object({
-            price: Joi.number().min(0).required().messages({
-                'number.base': 'Monthly price must be a number',
-                'number.min': 'Monthly price must be greater than or equal to 0.',
-                'any.required': 'Monthly price is required.'
-            })
-        }).optional(),
-    }).when('type', {
-        is: 'Parking',
-        then: Joi.required().messages({
-            'any.required': 'Rental parking plan is required for Parking type.'
-        }),
-        otherwise: Joi.optional()
+    plan: Joi.string().valid('hourly', 'daily', 'monthly', 'yearly').required().messages({
+        'any.only': 'Plan must be one of "hourly", "daily", "monthly", or "yearly".',
+        'any.required': 'Plan is required.',
     }),
-
-    storagePlan: Joi.object({
-        daily: Joi.object({
-            price: Joi.number().min(0).required().messages({
-                'number.base': 'Daily price must be a number',
-                'number.min': 'Daily price must be greater than or equal to 0.',
-                'any.required': 'Daily price is required.'
-            })
-        }).optional(),
-        monthly: Joi.object({
-            price: Joi.number().min(0).required().messages({
-                'number.base': 'Monthly price must be a number',
-                'number.min': 'Monthly price must be greater than or equal to 0.',
-                'any.required': 'Monthly price is required.'
-            })
-        }).optional(),
-        yearly: Joi.object({
-            price: Joi.number().min(0).required().messages({
-                'number.base': 'Yearly price must be a number',
-                'number.min': 'Yearly price must be greater than or equal to 0.',
-                'any.required': 'Yearly price is required.'
-            })
-        }).optional(),
-    }).when('type', {
-        is: 'Storage',
-        then: Joi.required().messages({
-            'any.required': 'Storage plan is required for Storage type.'
-        }),
-        otherwise: Joi.optional()
+    price: Joi.number().greater(0).required().messages({
+        'number.base': 'Price must be a number.',
+        'number.greater': 'Price must be greater than zero.',
+        'any.required': 'Price is required.',
     }),
-
     typeOfSpace: Joi.string().valid('Indoor', 'Outdoor').required().messages({
-        'any.only': 'Type of space must be either "Indoor" or "Outdoor"',
+        'any.only': 'Type of space must be either "Indoor" or "Outdoor".',
         'any.required': 'Type of space is required.',
     }),
-
     location: Joi.object({
         address: Joi.string().min(1).required().messages({
-            'string.base': 'Location address must be a string',
+            'string.base': 'Location address must be a string.',
             'string.empty': 'Location address is required.',
             'any.required': 'Location address is required.',
         }),
         coordinates: Joi.array().items(Joi.number().required()).length(2).required().messages({
-            'array.base': 'Coordinates must be an array of numbers',
+            'array.base': 'Coordinates must be an array of numbers.',
             'array.length': 'Coordinates must contain exactly two numbers.',
             'any.required': 'Coordinates are required.',
         }),
     }).required().messages({
-        'object.base': 'Location must be an object',
+        'object.base': 'Location must be an object.',
         'any.required': 'Location is required.',
     }),
-
     dimensions: Joi.object({
         length: Joi.number().greater(0).required().messages({
-            'number.base': 'Length must be a number',
+            'number.base': 'Length must be a number.',
             'number.greater': 'Length must be greater than zero.',
             'any.required': 'Length is required.',
         }),
         width: Joi.number().greater(0).required().messages({
-            'number.base': 'Width must be a number',
+            'number.base': 'Width must be a number.',
             'number.greater': 'Width must be greater than zero.',
             'any.required': 'Width is required.',
         }),
         height: Joi.number().greater(0).optional().messages({
-            'number.base': 'Height must be a number',
+            'number.base': 'Height must be a number.',
             'number.greater': 'Height must be greater than zero.',
         }),
     }).required().messages({
-        'object.base': 'Dimensions must be an object',
+        'object.base': 'Dimensions must be an object.',
         'any.required': 'Dimensions are required.',
     }),
-
     amenities: Joi.array().items(Joi.string().valid(
-        'ClimateControlled', 
-        'SmokeDetectors', 
-        'PetFree', 
-        'SmokeFree', 
-        'PrivateSpace', 
+        'ClimateControlled',
+        'SmokeDetectors',
+        'PetFree',
+        'SmokeFree',
+        'PrivateSpace',
         'SecurityCamera'
-    )).min(1).required().messages({
-        'array.base': 'Amenities must be an array of strings',
-        'array.min': 'At least one amenity is required.',
-        'any.required': 'Amenities are required.',
+    )).optional().messages({
+        'array.base': 'Amenities must be an array of valid options.',
     }),
-
     vehicleType: Joi.string().valid('Compact', 'Standard', 'RV', 'Boat', 'LargeVehicles', 'Motorcycle').required().messages({
-        'any.only': 'Vehicle type must be either "Compact", "Standard", "RV", "Boat", "LargeVehicles", or "Motorcycle"',
+        'any.only': 'Vehicle type must be one of "Compact", "Standard", "RV", "Boat", "LargeVehicles", or "Motorcycle".',
         'any.required': 'Vehicle type is required.',
     }),
-
     spaceType: Joi.string().valid('Residential', 'Commercial').required().messages({
-        'any.only': 'Space type must be either "Residential" or "Commercial"',
+        'any.only': 'Space type must be either "Residential" or "Commercial".',
         'any.required': 'Space type is required.',
     }),
-
-    status: Joi.string().valid('Available', 'NotAvailable').optional().messages({
-        'any.only': 'Status must be either "Available" or "NotAvailable"',
+    status: Joi.string().valid('Available', 'RentOut').optional().messages({
+        'any.only': 'Status must be either "Available" or "RentOut".',
     }),
-
 });
+
+
 
 
 module.exports = { rentalListingSchema, createStorySchema, userSchema, updateUserSchema, signInSchema, emailSchema, passwordSchema, updateProfileSchema };

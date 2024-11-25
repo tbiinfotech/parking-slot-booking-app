@@ -77,10 +77,7 @@ router.get("/api/get-user-addresses", authorize(), ListingController.getUserAddr
 router.get("/api/addresses", authorize(), ListingController.getAllAddresses);
 router.get("/api/addresses/:listingId", authorize(), ListingController.getAddressByListId);
 router.get("/api/addresses-with-pagination", authorize(), ListingController.getAllAddressesWithPaginagtion);
-
-
-
-
+router.get("/api/listings/filter", authorize(), ListingController.getListingsWithinRadius);
 
 
 router.post('/api/favorites', authorize(), ListingController.addToFavorites);
@@ -94,17 +91,17 @@ router.delete('/api/listings/:listingId', authorize(), ListingController.removeL
 router.post('/api/deleteListing', authorize(), ListingController.deleteAllListing);
 
 router.post(
-  "/api/listings/:listingId",
+  "/api/listings/:id",
   authorize(),
   (req, res, next) => {
-    upload.array('mediaUrl', 4)(req, res, (err) => {
+    upload.array('mediaUrl', 8)(req, res, (err) => {
       if (err) {
         return res.status(400).json({ success: false, message: err.message });
       }
       next();
     });
   },
-  ListingController.editListing
+  ListingController.updateListing
 );
 
 

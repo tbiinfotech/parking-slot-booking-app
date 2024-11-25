@@ -157,11 +157,11 @@ module.exports.createUser = async (req, res, next) => {
 
     // Generate and send OTP
     const otp = generateOTP(); // Assume this generates a 6-digit OTP
-    // await client.messages.create({
-    //   body: `Your OTP code is ${otp}. It will expire in 10 minutes.`,
-    //   from: '+13345186584',
-    //   to: phoneNumber,
-    // });
+    await client.messages.create({
+      body: `Your OTP code is ${otp}. It will expire in 10 minutes.`,
+      from: '+13345186584',
+      to: phoneNumber,
+    });
 
     // Save user data in the PendingUser collection
     const pendingUser = await PendingUser.create({
