@@ -21,8 +21,8 @@ module.exports.getUser = async (req, res, next) => {
   try {
     const users = await User.find({
       email: { $ne: 'admin@gmail.com' },
-      isDeleted: { $ne: true },  // Exclude users marked as deleted
-    });
+      isDeleted: { $ne: true }  // Exclude users marked as deleted
+    }).sort({ createdAt: -1 }).skip(skip).limit(limit);
 
     return res.json({
       status: 200,
@@ -41,6 +41,7 @@ module.exports.getUser = async (req, res, next) => {
 };
 
 module.exports.getUsersWithPagination = async (req, res, next) => {
+  console.log('getUsersWithPagination')
   try {
     const page = parseInt(req.query.page) || 1;  // Default to page 1 if not provided
     const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page if not provided
@@ -54,6 +55,7 @@ module.exports.getUsersWithPagination = async (req, res, next) => {
 
     // Get the data with pagination and filter applied
     const users = await User.find(filter)
+      .sort({ createdAt: -1 }) // Sort by createdAt in descending order
       .skip(skip)
       .limit(limit);
 

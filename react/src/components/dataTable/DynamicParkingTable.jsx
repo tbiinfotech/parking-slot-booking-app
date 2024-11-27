@@ -107,7 +107,7 @@ function DynamicParkingTable({ data, setDeleteUser, selectedUsers,
                         <Td className='name'>{item?.owner?.name}</Td>
                         <Td className='email'>{item?.spaceType}</Td>
                         <Td className='age'>{item?.type}</Td>
-                        <Td className='age'>100$d</Td>
+                        <Td className='age'>{item?.price || 75}$</Td>
 
                         <Td className='action'>
                             <IconButton className='view-btn ' onClick={() => navigate(`/parking/details/${item._id}`)}>

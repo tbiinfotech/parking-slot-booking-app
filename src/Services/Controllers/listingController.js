@@ -87,8 +87,9 @@ exports.getUserAddresses = async (req, res) => {
         const ownerId = req.user.id; // Assume user is authenticated and owner ID is available
 
         // Find all listings for the specified owner
-        const listings = await Listing.find({ owner: ownerId });
-
+        const listings = await Listing.find({ owner: ownerId })
+            .populate('owner')
+            .sort({ createdAt: -1 });
         // Extract addresses from listings
         const addresses = listings.map(listing => ({
             address: listing.location.address,
@@ -109,8 +110,9 @@ exports.getUserAddresses = async (req, res) => {
 exports.getAllAddresses = async (req, res) => {
     try {
         // Fetch all listings from the database
-        const listings = await Listing.find({}).populate('owner');
-
+        const listings = await Listing.find({})
+            .populate('owner')
+            .sort({ createdAt: -1 });
         // Extract addresses from listings
         const addresses = listings.map(listing => ({
             address: listing.location.address,
@@ -146,8 +148,7 @@ exports.getAllAddressesWithPaginagtion = async (req, res) => {
         const filter = {}; // No specific filters are applied for now
 
         // Fetch the listings with pagination
-        const listings = await Listing.find({}).populate('owner').skip(skip).limit(limit);
-
+        const listings = await Listing.find({}).populate('owner').sort({ createdAt: -1 }).skip(skip).limit(limit);
         // Extract addresses from listings
         const addresses = listings.map(listing => ({
             address: listing.location.address,

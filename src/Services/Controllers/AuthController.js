@@ -242,7 +242,7 @@ module.exports.ForgotPassword = async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
+/*
 module.exports.resendOtp = async (req, res, next) => {
   console.log("-----resendOtp------");
   try {
@@ -261,18 +261,18 @@ module.exports.resendOtp = async (req, res, next) => {
     // Generate and send OTP
     const otp = generateOTP();
 
-    await client.messages.create({
-      body: `Your OTP for password reset is ${otp}. It is valid for 10 minutes. Please do not share it with anyone.`,
-      from: '+13345186584', // Replace with your actual Twilio phone number
-      to: pendingUser.phoneNumber,
-    });
+      client.messages.create({
+      body: `Your OTP for password reset is ${otp}. It is valid for 2 minutes. Please do not share it with anyone.`,
+      from: 'whatsapp:+14155238886',
+      to: `whatsapp:${phoneNumber}`
+    }).then(message => console.log(message.sid))
 
     // Update OTP and expiration time in PendingUser collection
     const updatedPendingUser = await PendingUser.findOneAndUpdate(
       { email },
       {
         otp,
-        otpExpires: Date.now() + 10 * 60 * 1000, // 10 minutes expiration
+        otpExpires: Date.now() + 2 * 60 * 1000, // 10 minutes expiration
       },
       { new: true } // Return the updated document
     );
@@ -290,7 +290,63 @@ module.exports.resendOtp = async (req, res, next) => {
     });
   }
 };
+*/
 
+module.exports.resendOtp = async (req, res, next) => {
+  console.log("-----resendOtp------");
+  try {
+    const { email } = req.body;
+
+    // Check if the user is in the PendingUser collection
+    const pendingUser = await PendingUser.findOne({ email });
+
+    if (!pendingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "No pending registration found for this email.",
+      });
+    }
+
+    // Check if the existing OTP is still valid
+    if (pendingUser.otpExpires > Date.now()) {
+      return res.status(400).json({
+        success: false,
+        message: "An OTP was recently sent. Please wait before requesting a new one.",
+      });
+    }
+
+    // Generate and send OTP
+    const otp = generateOTP();
+
+    await client.messages.create({
+      body: `Your OTP for password reset is ${otp}. It is valid for 2 minutes. Please do not share it with anyone.`,
+      from: 'whatsapp:+14155238886',
+      to: `whatsapp:${pendingUser.phoneNumber}`,
+    }).then(message => console.log(`OTP sent. SID: ${message.sid}`));
+
+    // Update OTP and expiration time in PendingUser collection
+    await PendingUser.findOneAndUpdate(
+      { email },
+      {
+        otp,
+        otpExpires: Date.now() + 2 * 60 * 1000, // 2 minutes expiration
+      },
+      { new: true } // Return the updated document
+    );
+
+    return res.json({
+      status: 200,
+      success: true,
+      message: "OTP has been resent to your phone number.",
+    });
+  } catch (error) {
+    console.error("Error in resendOtp:", error);
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred while processing your request.",
+    });
+  }
+};
 
 module.exports.ResetPassword = async (req, res) => {
   try {

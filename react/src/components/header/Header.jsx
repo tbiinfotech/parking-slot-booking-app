@@ -35,16 +35,14 @@ function Header() {
     setMenu(value);
   };
 
-  let settings = ['Profile', 'Logout'];
+  let settings = ['Logout'];
 
   useEffect(() => {
     if (activeMenu === 'Logout') {
       dispatch(logoutSuccess());
       navigate('/login');
     }
-    if (activeMenu === 'Profile') {
-      navigate(`/profile`);
-    }
+
   }, [logoutSuccess, navigate, activeMenu]);
 
   // function getName(name) {
@@ -134,6 +132,11 @@ function Header() {
                 open={Boolean(anchorElUser)}
                 onClose={handleCloseUserMenu}
               >
+                <MenuItem
+                  onClick={() => { navigate('/profile') }}
+                >
+                  <Typography textalign="center">{'Profile'}</Typography>
+                </MenuItem>
                 {settings.map((setting) => (
                   <MenuItem
                     key={setting}
@@ -142,6 +145,7 @@ function Header() {
                     <Typography textalign="center">{setting}</Typography>
                   </MenuItem>
                 ))}
+
               </Menu>
             </Box>
           </Toolbar>
