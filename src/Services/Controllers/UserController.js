@@ -170,7 +170,7 @@ module.exports.createUser = async (req, res, next) => {
 
 
     client.messages.create({
-      body: `Your OTP is ${otp} It will expire in 10 minutes`,
+      body: `Your OTP is ${otp} It will expire in 2 minutes`,
       from: 'whatsapp:+14155238886',
       to: `whatsapp:${phoneNumber}`
     }).then(message => console.log(message.sid))
