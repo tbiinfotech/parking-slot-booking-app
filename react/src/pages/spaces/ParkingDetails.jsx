@@ -28,10 +28,23 @@ const ParkingDetails = () => {
         }
     }, [dispatch]);
 
+    const convertPlan = (plan) => {
+        if (plan === 'Hourly') {
+            return 'Hour'
+        } else if (plan === 'Monthly') {
+            return 'Month'
+
+        } else if (plan === 'Yearly') {
+            return 'Year'
+
+        }
+        return null; // Return null if plan is not recognized
+    };
+
     const transformData = (outputData) => {
         const firstItem = outputData[0]; // Assuming the output data is an array and we need the first item
 
-
+        console.log('firstItem', firstItem)
         const data = {
             media: firstItem.photos.map(photo => photo.replace(/^public\//, '')) || [],
             space: firstItem?.title || '',
@@ -45,7 +58,7 @@ const ParkingDetails = () => {
             },
             address: firstItem?.location.address || '',
             description: firstItem?.description || '',
-            price: firstItem?.rentalParkingPlan === 'Hourly' ? '$100/hour' : '$100/month',
+            price: firstItem?.price ? "$" + firstItem?.price + "/" + convertPlan(firstItem?.plan) : '$75/month',
             features: [
                 firstItem?.amenities.includes('ClimateControlled') ? 'Climated Controlled' : null,
                 firstItem?.amenities.includes('SmokeDetectors') ? 'Smoke detectors' : null,
@@ -112,7 +125,7 @@ const ParkingDetails = () => {
                             height: { xs: 60, sm: 80, md: 165 }, // Responsive height
                             objectFit: 'cover',
                             borderRadius: 1,
-                            
+
                         }}
                     />
                 ))}
@@ -121,12 +134,12 @@ const ParkingDetails = () => {
             {/* Details Grid */}
             <Grid container spacing={2}>
                 <Grid item xs={12} sm={6} md={4}
-                
-                sx={{
-                    p: { xs: 2, md: 2 },
-                    border: '1px solid #e0e0e0', // Light gray border
-                }}
-                
+
+                    sx={{
+                        p: { xs: 2, md: 2 },
+                        border: '1px solid #e0e0e0', // Light gray border
+                    }}
+
                 >
                     <Typography variant="subtitle2">Space</Typography>
                     <Typography>{details?.space}</Typography>
