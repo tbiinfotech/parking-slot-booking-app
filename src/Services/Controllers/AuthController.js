@@ -319,7 +319,7 @@ module.exports.resendOtp = async (req, res, next) => {
     const otp = generateOTP();
 
     await client.messages.create({
-      body: `Your OTP for password reset is ${otp}. It is valid for 2 minutes. Please do not share it with anyone.`,
+      body: `Your OTP for account verification is ${otp}. It is valid for 2 minutes. Please do not share it with anyone.`,
       from: 'whatsapp:+14155238886',
       to: `whatsapp:${pendingUser.phoneNumber}`,
     }).then(message => console.log(`OTP sent. SID: ${message.sid}`));
