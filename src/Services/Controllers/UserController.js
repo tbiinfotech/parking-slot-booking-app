@@ -187,7 +187,7 @@ module.exports.createUser = async (req, res, next) => {
       password: hashedPassword,
       phoneNumber,
       otp,
-      otpExpires: Date.now() + 10 * 60 * 1000, // OTP valid for 10 minutes
+      otpExpires: Date.now() + 2 * 60 * 1000, // OTP valid for 10 minutes
     });
 
     return res.status(200).json({
