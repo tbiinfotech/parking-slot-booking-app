@@ -39,7 +39,7 @@ const PendingUserSchema = new mongoose.Schema(
 );
 
 // TTL index to automatically remove expired OTP records
-PendingUserSchema.index({ otpExpires: 1 }, { expireAfterSeconds: 0 });
+PendingUserSchema.index({ otpExpires: 1 }, { expireAfterSeconds: 600 });
 
 // Create the model from the schema
 const PendingUser = mongoose.model('PendingUser', PendingUserSchema);
