@@ -118,10 +118,10 @@ module.exports.verifyOtp = async (req, res) => {
     const token = jwt.sign(
       { user_id: newUser._id, role: "user" },
       process.env.jwt_token_key,
-      { expiresIn: "8h" }
     );
 
     return res.json({
+      user: newUser,
       status: 200,
       success: true,
       token,
@@ -169,10 +169,10 @@ module.exports.verifyForgotOtp = async (req, res) => {
     const token = jwt.sign(
       { user_id: user._id, role: "user" },
       process.env.jwt_token_key,
-      { expiresIn: "8h" }
     );
 
     return res.json({
+      user: user,
       status: 200,
       success: true,
       token,
@@ -334,7 +334,11 @@ module.exports.resendOtp = async (req, res, next) => {
       { new: true } // Return the updated document
     );
 
+    const newUser = await User.findOne({ email })
+
+ 
     return res.json({
+      user: newUser,
       status: 200,
       success: true,
       message: "OTP has been resent to your phone number.",

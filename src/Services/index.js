@@ -45,6 +45,11 @@ router.post(
   authorize(),
   UserController.updateUser
 );
+
+
+router.post("/api/update-preference", authorize(), UserController.updatePreference)
+router.post("/api/update-notification", authorize(), UserController.updateNotification)
+
 router.delete(
   "/api/delete-user/:id",
   authorize(),

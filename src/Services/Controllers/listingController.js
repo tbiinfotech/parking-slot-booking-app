@@ -44,7 +44,10 @@ exports.createListing = async (req, res) => {
             : [];
 
         // Handle photos if files are uploaded
-        const photos = req.files ? req.files.map(file => file.path) : [];
+        const photos = req.files
+            ? req.files.map(file => file.path.replace(/^public\//, ''))
+            : [];
+
 
         // Create a new listing object
         const listing = new Listing({
@@ -393,7 +396,7 @@ exports.editListing = async (req, res) => {
             });
 
             // Add new photos
-            listing.photos = req.files.map(file => file.path);
+            listing.photos = req.files.map(file => file.path.replace(/^public\//, ''));
         }
 
         // Validate required fields
@@ -489,7 +492,7 @@ exports.updateListing = async (req, res) => {
             });
 
             // Add new photos
-            listing.photos = req.files.map(file => file.path);
+            listing.photos = req.files.map(file => file.path.replace(/^public\//, ''));
         }
 
         console.log('typeOfSpace', typeOfSpace)

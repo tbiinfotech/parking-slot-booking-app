@@ -269,6 +269,76 @@ module.exports.updateUser = async (req, res, next) => {
   }
 };
 
+
+module.exports.updatePreference = async (req, res, next) => {
+  console.log("updatePreference")
+  try {
+    let { type } = req.body;
+    console.log('req.user.id', req.user.id)
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(400).json({
+        status: 400,
+        success: false,
+        message: "User does not exist!",
+      });
+    }
+
+    user.preference = type
+    user.save();
+
+    return res.json({
+      user: user,
+      status: 200,
+      success: true,
+      message: "Preference updated",
+    });
+
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({
+      status: 500,
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+module.exports.updateNotification = async (req, res, next) => {
+  console.log("updateNotification")
+  try {
+    let { status } = req.body;
+    console.log('req.user.id', req.user.id)
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(400).json({
+        status: 400,
+        success: false,
+        message: "User does not exist!",
+      });
+    }
+
+    user.pushNotification = status
+    user.save();
+
+    return res.json({
+      user: user,
+      status: 200,
+      success: true,
+      message: "Notification updated",
+    });
+
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({
+      status: 500,
+      success: false,
+      message: error.message,
+    });
+  }
+};
 module.exports.deleteUser = async (req, res, next) => {
   const { id } = req.params;
   try {

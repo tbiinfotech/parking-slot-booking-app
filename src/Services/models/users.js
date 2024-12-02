@@ -36,6 +36,15 @@ const userSchema = new mongoose.Schema({
     enum: ["active", "inactive"],
     default: "active",
   },
+  preference: {
+    type: String,
+    enum: ["storage", "parking"],
+    default: "storage",
+  },
+  pushNotification: {
+    type: Boolean,
+    default: false, // Flag to check if the user is verified
+  },
   otp: {
     type: String, // Store the OTP code
   },
