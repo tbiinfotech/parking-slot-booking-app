@@ -110,6 +110,38 @@ exports.getUserAddresses = async (req, res) => {
     }
 };
 
+
+exports.getAddressByUserLocation = async (req, res) => {
+    try {
+        // Extract owner ID from request parameters or user session
+        const ownerId = req.user.id; // Assume user is authenticated and owner ID is available
+
+        const userInfo = await User.findById(ownerId)
+
+        console.log('userInfo', userInfo)
+        console.log('userInfo preference', userInfo.preference)
+
+        // Find all listings for the specified owner
+        const listings = await Listing.find({ "$and": [{ ownerId }, { type: userInfo.preference }] })
+            .populate('owner')
+            .sort({ createdAt: -1 });
+        // Extract addresses from listings
+        const addresses = listings.map(listing => ({
+            address: listing.location.address,
+            coordinates: listing.location.coordinates
+        }));
+
+        // Check if addresses were found
+        if (addresses.length === 0) {
+            return res.status(404).json({ success: false, message: 'No addresses found for this owner.' });
+        }
+
+        res.status(200).json({ success: true, listings });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 exports.getAllAddresses = async (req, res) => {
     try {
         // Fetch all listings from the database
@@ -194,7 +226,10 @@ exports.getAddressByListId = async (req, res) => {
 
         const { listingId } = req.params
         // Fetch all listings from the database
-        const listings = await Listing.find({ _id: listingId }).populate('owner');
+        const listings = await Listing.find({ _id: listingId }).populate({
+            path: 'owner',
+            select: '_id name' // Specify the fields you want to include
+        });
 
         // Extract addresses from listings
         const addresses = listings.map(listing => ({
