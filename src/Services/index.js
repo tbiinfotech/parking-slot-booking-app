@@ -24,13 +24,16 @@ router.post("/api/forget-password", AuthController.ForgotPassword);
 router.post("/api/reset-password", AuthController.ResetPassword);
 router.post("/api/resend-otp", AuthController.resendOtp);
 router.post("/api/reset-admin-password", authorize(), AuthController.resetAdminPassword);
+router.post("/api/verify-email", AuthController.verifyEmail)
+router.post("/api/verify-email-otp", AuthController.verifyEmailOtp)
+router.post("/api/change-password", authorize(), AuthController.changePassword)
+
 
 /*twillio sms route*/
 router.post("/api/send-otp", AuthController.sendOTP)
 router.post("/api/verify-otp", AuthController.verifyOtp)
 router.post("/api/verify-forget-otp", AuthController.verifyForgotOtp)
-
-
+router.post("/api/change-forget-password", AuthController.changeForgetPassword)
 
 /*** Admin ***/
 router.post("/api/create-user", UserController.createUser);
@@ -82,7 +85,8 @@ router.get("/api/get-user-addresses", authorize(), ListingController.getUserAddr
 router.get("/api/addresses", authorize(), ListingController.getAllAddresses);
 router.get("/api/addresses/:listingId", authorize(), ListingController.getAddressByListId);
 router.get("/api/addresses-with-pagination", authorize(), ListingController.getAllAddressesWithPaginagtion);
-router.get("/api/listings/filter", authorize(), ListingController.getListingsWithinRadius);
+router.get("/api/listings/home", authorize(), ListingController.getListingsWithinRadius);
+router.get("/api/address-user-location", authorize(), ListingController.getAddressByUserLocation);
 
 
 router.post('/api/favorites', authorize(), ListingController.addToFavorites);

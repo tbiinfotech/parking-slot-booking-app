@@ -301,11 +301,7 @@ exports.getFavoriteAddresses = async (req, res) => {
 
         console.log('getFavoriteAddresses user', user)
         // Extract addresses from favorites
-        const favoriteAddresses = user.favorites.map(listing => ({
-            address: listing.location.address,
-            coordinates: listing.location.coordinates,
-            title: listing.title
-        }));
+        const favoriteAddresses = user.favorites.map(listing => listing);
 
         // Check if there are favorite addresses
         if (favoriteAddresses.length === 0) {
@@ -670,9 +666,38 @@ function haversine(lat1, lon1, lat2, lon2) {
 }
 
 
+function markFavorites(listings, favorites) {
+    // Create a Set from the favorites array for faster lookup
+    const favoritesSet = new Set(favorites);
+
+    // Iterate through each listing and add the isFavorite attribute
+    const updatedListing = listings.map(listing => {
+        // Convert Mongoose document to plain object
+        const plainListing = listing.toObject ? listing.toObject() : listing; // Check if toObject exists
+
+        return {
+            ...plainListing, // Spread the existing listing properties
+            isFavorite: favorites.includes(plainListing._id) // Check if the listing ID is in the favorites set
+        };
+    });
+
+
+    return updatedListing;
+}
+
+
+function filterByPlanType(listings, type) {
+    const updatedListingByPlan = listings.filter(listing => listing.type == type);
+    return updatedListingByPlan;
+}
+
 exports.getListingsWithinRadius = async (req, res) => {
     try {
-        const { latitude, longitude, radiusInMiles } = req.body;
+        const user = await User.findById(req.user.id)
+        const radiusInMiles = 12;
+
+        const latitude = user.latitude
+        const longitude = user.longitude
 
         // Validate inputs
         if (!latitude || !longitude || !radiusInMiles) {
@@ -704,9 +729,14 @@ exports.getListingsWithinRadius = async (req, res) => {
             });
         }
 
+
+        const updatedListings = markFavorites(nearbyListings, user.favorites);
+        const filterByPlan = filterByPlanType(updatedListings, user.preference);
+
+
         return res.status(200).json({
             success: true,
-            listings: nearbyListings
+            listings: filterByPlan
         });
     } catch (error) {
         console.error('Error in getListingsWithinRadius:', error);

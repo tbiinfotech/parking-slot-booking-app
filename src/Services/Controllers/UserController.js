@@ -7,14 +7,14 @@ const Joi = require('joi');
 const jwt = require("jsonwebtoken");
 const fs = require('fs');
 const path = require('path');
-const { userSchema, updateUserSchema, updateProfileSchema } = require('../../libs/schemaValidation')
+const { userSchema, updateUserSchema, updateProfileSchema, emailSchema } = require('../../libs/schemaValidation')
 const { generateOTP } = require('./../../../utills/authUtils')
 const errorHandling = require('../../libs/errorHandling')
 const mongoose = require("mongoose");
 
 const { SendEmail } = require('../../libs/Helper')
 
-const { TWILIO_SERVICE_SID, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN } = process.env;
+const { TWILIO_SERVICE_SID, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILLIO_SENDER_NO } = process.env;
 const client = require('twilio')(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 
 module.exports.getUser = async (req, res, next) => {
@@ -122,7 +122,7 @@ module.exports.getUserById = async (req, res) => {
 
 
 module.exports.createUser = async (req, res, next) => {
-  console.log("-----create_user------");
+  console.log("-----create_user------", TWILLIO_SENDER_NO);
   try {
     let { name, email, password, phoneNumber } = req.body;
     const { error } = userSchema.validate(req.body);
@@ -173,7 +173,7 @@ module.exports.createUser = async (req, res, next) => {
 
     client.messages.create({
       body: `Your OTP is ${otp} It will expire in 2 minutes`,
-      from: 'whatsapp:+14155238886',
+      from: `whatsapp:${TWILLIO_SENDER_NO}`,
       to: `whatsapp:${phoneNumber}`
     }).then(message => console.log(message.sid))
     // client.messages.create({
@@ -204,6 +204,10 @@ module.exports.createUser = async (req, res, next) => {
     });
   }
 };
+
+
+
+
 
 
 module.exports.updateUser = async (req, res, next) => {
@@ -273,7 +277,7 @@ module.exports.updateUser = async (req, res, next) => {
 module.exports.updatePreference = async (req, res, next) => {
   console.log("updatePreference")
   try {
-    let { type } = req.body;
+    let { type, latitude, longitude } = req.body;
     console.log('req.user.id', req.user.id)
 
     const user = await User.findById(req.user.id);
@@ -285,7 +289,14 @@ module.exports.updatePreference = async (req, res, next) => {
       });
     }
 
-    user.preference = type
+    function capitalizeFirstLetter(str) {
+      if (!str) return ''; // Handle empty string case
+      return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    }
+
+    user.preference = capitalizeFirstLetter(type)
+    user.latitude = latitude
+    user.longitude = longitude
     user.save();
 
     return res.json({

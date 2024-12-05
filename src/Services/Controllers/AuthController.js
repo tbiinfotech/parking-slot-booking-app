@@ -77,7 +77,6 @@ module.exports.SignIn = async (req, res, next) => {
 
 module.exports.verifyOtp = async (req, res) => {
   const { email, otp } = req.body;
-
   try {
     // Check if the user exists in the PendingUser collection
     const pendingUser = await PendingUser.findOne({ email });
@@ -136,6 +135,69 @@ module.exports.verifyOtp = async (req, res) => {
   }
 };
 
+
+module.exports.ForgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const { error } = emailSchema.validate({ email });
+    if (error) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    // Find the user by email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const otp = generateOTP();
+    console.log("Generated OTP:", otp); // For debugging
+
+    // Update OTP and expiration time
+    const updatedUser = await User.findOneAndUpdate(
+      { email },
+      {
+        otp,
+        otpExpires: Date.now() + 2 * 60 * 1000,
+      },
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedUser) {
+      return res.status(500).json({ message: "Failed to update OTP" });
+    }
+
+
+
+    let mail_options = {
+      to: email,
+      subject: 'Your OTP Code',
+      text: `Your forget password verification OTP code is ${otp}. It will expire in 2 minutes.`,
+      from: `${process.env.MAIL_USERNAME} <${process.env.MAIL_FROM_ADDRESS}>`,
+    };
+
+    await SendEmail(mail_options)
+      .then((info) => {
+        console.log("Nodemailer Email sent ---------- ", info.response);
+      })
+      .catch((error) => {
+        console.log("Nodemailer error ---------- ", error);
+      });
+
+    const userEmail = await Otp.create({
+      email,
+      otp,
+      otpExpires: Date.now() + 2 * 60 * 1000, // OTP valid for 10 minutes
+    });
+
+    return res.status(200).json({ message: "OTP sent to your email" });
+  } catch (error) {
+    console.error("Error in Forgot Password: ", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
 module.exports.verifyForgotOtp = async (req, res) => {
   const { email, otp } = req.body;
 
@@ -165,18 +227,10 @@ module.exports.verifyForgotOtp = async (req, res) => {
     user.isVerified = true; // Set user as verified
     await user.save();
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { user_id: user._id, role: "user" },
-      process.env.jwt_token_key,
-    );
-
     return res.json({
-      user: user,
       status: 200,
       success: true,
-      token,
-      message: "Your account has been verified successfully",
+      message: "Your have been verified successfully",
     });
   } catch (error) {
     console.error("Error in verifyOtp:", error);
@@ -187,110 +241,102 @@ module.exports.verifyForgotOtp = async (req, res) => {
   }
 };
 
-module.exports.ForgotPassword = async (req, res) => {
+
+module.exports.verifyEmail = async (req, res, next) => {
+  console.log("-----sendEmail------");
   try {
-    const { email } = req.body;
+    let { email } = req.body;
     const { error } = emailSchema.validate({ email });
+
     if (error) {
       return res.status(400).json({ error: error.details[0].message });
     }
 
-    // Find the user by email
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    const otp = generateOTP();
-    console.log("Generated OTP:", otp); // For debugging
-
-    const token = jwt.sign(
-      { user_id: user._id, role: "user" },
-      process.env.jwt_token_key,
-      { expiresIn: "8h" }
-    );
-
-    // Update OTP and expiration time
-    const updatedUser = await User.findOneAndUpdate(
-      { email },
-      {
-        otp,
-        token,
-        tokenExpires: Date.now() + 24 * 60 * 60 * 1000,
-        otpExpires: Date.now() + 10 * 60 * 1000, // 5 minutes expiration
-      },
-      { new: true } // Return the updated document
-    );
-
-    if (!updatedUser) {
-      return res.status(500).json({ message: "Failed to update OTP" });
-    }
-    // Debugging logs to confirm
-    console.log("Updated User:", updatedUser);
-    console.log("user.phoneNumber:", user.phoneNumber);
-
-    /*
-        await client.messages.create({
-          body: `Your OTP for password reset is ${otp}. It is valid for 10 minutes.`,
-          from: '+13345186584',
-          to: user.phoneNumber,
-        });*/
-
-    return res.status(200).json({ message: "OTP sent to your email", token });
-  } catch (error) {
-    console.error("Error in Forgot Password: ", error);
-    return res.status(500).json({ message: "Internal Server Error" });
-  }
-};
-/*
-module.exports.resendOtp = async (req, res, next) => {
-  console.log("-----resendOtp------");
-  try {
-    let { email } = req.body;
-
-    // Check if the user is in the PendingUser collection
-    const pendingUser = await PendingUser.findOne({ email });
-
-    if (!pendingUser) {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "No pending registration found for this email.",
+        message: "Email already exists. Please try a different email.",
       });
     }
-
     // Generate and send OTP
     const otp = generateOTP();
 
-      client.messages.create({
-      body: `Your OTP for password reset is ${otp}. It is valid for 2 minutes. Please do not share it with anyone.`,
-      from: 'whatsapp:+14155238886',
-      to: `whatsapp:${phoneNumber}`
-    }).then(message => console.log(message.sid))
+    let mail_options = {
+      to: email,
+      subject: 'Your OTP Code',
+      text: `Your Email verification OTP code is ${otp}. It will expire in 2 minutes.`,
+      from: `${process.env.MAIL_USERNAME} <${process.env.MAIL_FROM_ADDRESS}>`,
+    };
 
-    // Update OTP and expiration time in PendingUser collection
-    const updatedPendingUser = await PendingUser.findOneAndUpdate(
-      { email },
-      {
-        otp,
-        otpExpires: Date.now() + 2 * 60 * 1000, // 10 minutes expiration
-      },
-      { new: true } // Return the updated document
-    );
+    await SendEmail(mail_options)
+      .then((info) => {
+        console.log("Nodemailer Email sent ---------- ", info.response);
+      })
+      .catch((error) => {
+        console.log("Nodemailer error ---------- ", error);
+      });
+
+    const userEmail = await Otp.create({
+      email,
+      otp,
+      otpExpires: Date.now() + 2 * 60 * 1000, // OTP valid for 10 minutes
+    });
 
     return res.json({
       status: 200,
       success: true,
-      message: "OTP has been resent to your phone number.",
+      message: "OTP has been sent to your email.",
     });
   } catch (error) {
-    console.error("Error in resendOtp:", error);
+    console.error("Error in createUser:", error);
     return res.status(500).json({
       success: false,
       message: "An error occurred while processing your request.",
     });
   }
 };
-*/
+
+module.exports.verifyEmailOtp = async (req, res) => {
+  console.log("-----verifyEmailOtp------");
+  const { email, otp } = req.body;
+
+  try {
+    // Check if the user exists in the PendingUser collection
+    const isOtpExists = await Otp.findOne({ email });
+
+    if (!isOtpExists) {
+      return res.status(400).json({
+        success: false,
+        message: "regenerate OTP",
+      });
+    }
+
+    // Check if OTP matches and if it has expired
+    if (isOtpExists.otp !== otp || isOtpExists.otpExpires < Date.now()) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP is incorrect or has expired.",
+      });
+    }
+
+    // Remove the user from PendingUser collection
+    await Otp.deleteOne({ email });
+
+
+    return res.json({
+      status: 200,
+      success: true,
+      message: "Your Email has been verified successfully.",
+    });
+  } catch (error) {
+    console.error("Error in verifyOtp:", error);
+    return res.status(500).json({
+      success: false,
+      message: `An error occurred during OTP verification.${error}`,
+    });
+  }
+}
 
 module.exports.resendOtp = async (req, res, next) => {
   console.log("-----resendOtp------");
@@ -336,7 +382,7 @@ module.exports.resendOtp = async (req, res, next) => {
 
     const newUser = await User.findOne({ email })
 
- 
+
     return res.json({
       user: newUser,
       status: 200,
@@ -393,6 +439,82 @@ module.exports.ResetPassword = async (req, res) => {
   }
 };
 
+
+module.exports.changePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword, } = req.body;
+
+    if (!oldPassword) {
+      return res.status(404).json({ success: false, message: "Please provide your current password to proceed" });
+    }
+
+    // Validate new password
+    const { error } = passwordSchema.validate({ newPassword });
+    if (error) {
+      return res.status(400).json({
+        error: error.details[0].message,
+      });
+    }
+
+    // Find the user by ID
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User  not found" });
+    }
+
+    // Check if the old password is correct
+    const isMatch = bcrypt.compareSync(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: "Old password is incorrect" });
+    }
+
+    // Hash the new password
+    const hashedPassword = bcrypt.hashSync(newPassword, bcrypt.genSaltSync(10), null);
+    user.password = hashedPassword;
+    await user.save();
+
+    return res.status(200).json({ success: true, message: "Password changed successfully" });
+  } catch (error) {
+    console.error("Error in Change Password: ", error);
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+module.exports.changeForgetPassword = async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    // Validate new password
+    const { error } = passwordSchema.validate({ newPassword });
+    if (error) {
+      return res.status(400).json({
+        error: error.details[0].message,
+      });
+    }
+
+    // Find the user by ID
+    const user = await User.findOne({ email });
+
+    console.log('user', user)
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User  not found" });
+    }
+
+    // Hash the new password
+    const hashedPassword = bcrypt.hashSync(newPassword, bcrypt.genSaltSync(10), null);
+    user.password = hashedPassword;
+
+    await user.save();
+
+    return res.status(200).json({ success: true, message: "Password changed successfully" });
+  } catch (error) {
+    console.error("Error in Change Password: ", error);
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+
 module.exports.resetAdminPassword = async (req, res) => {
   const { newPassword } = req.body;
 
@@ -435,7 +557,6 @@ module.exports.resetAdminPassword = async (req, res) => {
   }
 };
 
-const otps = {};
 
 module.exports.sendOTP = async (req, res, next) => {
   const { phoneNumber } = req.body;

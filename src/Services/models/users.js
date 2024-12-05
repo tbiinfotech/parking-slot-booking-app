@@ -38,16 +38,26 @@ const userSchema = new mongoose.Schema({
   },
   preference: {
     type: String,
-    enum: ["storage", "parking"],
-    default: "storage",
+    enum: ["Storage", "Parking"],
+    default: "Storage",
   },
   pushNotification: {
     type: Boolean,
     default: false, // Flag to check if the user is verified
   },
+  latitude: {
+    type: String, // Store the OTP code
+    default: 0,
+  },
+  longitude: {
+    type: String, // Store the OTP code
+    default: 0,
+
+  },
   otp: {
     type: String, // Store the OTP code
   },
+
   otpExpires: {
     type: Date, // Expiration time for OTP
   },
