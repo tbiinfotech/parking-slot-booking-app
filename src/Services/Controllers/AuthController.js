@@ -141,13 +141,13 @@ module.exports.ForgotPassword = async (req, res) => {
     const { email } = req.body;
     const { error } = emailSchema.validate({ email });
     if (error) {
-      return res.status(400).json({ error: error.details[0].message });
+      return res.status(400).json({ error: error.details[0].message, success: false, });
     }
 
     // Find the user by email
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "User not found", success: false, });
     }
 
     const otp = generateOTP();
@@ -164,7 +164,7 @@ module.exports.ForgotPassword = async (req, res) => {
     );
 
     if (!updatedUser) {
-      return res.status(500).json({ message: "Failed to update OTP" });
+      return res.status(500).json({ message: "Failed to update OTP", success: false, });
     }
 
 
@@ -190,10 +190,10 @@ module.exports.ForgotPassword = async (req, res) => {
       otpExpires: Date.now() + 2 * 60 * 1000, // OTP valid for 10 minutes
     });
 
-    return res.status(200).json({ message: "OTP sent to your email" });
+    return res.status(200).json({ message: "OTP sent to your email", success: true, });
   } catch (error) {
     console.error("Error in Forgot Password: ", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({ message: "Internal Server Error", success: false, });
   }
 };
 

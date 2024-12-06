@@ -285,7 +285,9 @@ exports.addToFavorites = async (req, res) => {
         }
 
         // Add the listing to favorites
-        user.favorites.push(listingId);
+        // user.favorites.push(listingId);
+        user.favorites.unshift(listingId);
+
         await user.save();
 
         res.status(200).json({ success: true, message: 'Listing added to favorites successfully.' });
