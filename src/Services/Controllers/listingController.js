@@ -223,6 +223,7 @@ exports.getAllAddressesWithPaginagtion = async (req, res) => {
 
 exports.getAddressByListId = async (req, res) => {
     try {
+        const user = await User.findById(req.user.id)
 
         const { listingId } = req.params
         // Fetch all listings from the database
@@ -243,9 +244,12 @@ exports.getAddressByListId = async (req, res) => {
             return res.status(404).json({ success: false, message: 'No addresses found.' });
         }
 
+        const updatedListings = markFavorites(listings, user.favorites);
+
+
         return res.json({
             status: 200,
-            response: listings,
+            response: updatedListings,
             success: true,
             message: "Data found",
         });
