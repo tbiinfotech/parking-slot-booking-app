@@ -20,7 +20,7 @@ const client = require('twilio')(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 
 module.exports.SignIn = async (req, res, next) => {
   try {
-    let request_body = req.body;
+    const { email, latitude, longitude } = req.body;
     const { error } = signInSchema.validate(req.body)
 
     if (error) {
@@ -35,7 +35,7 @@ module.exports.SignIn = async (req, res, next) => {
 
     if (
       !user_detail ||
-      !(await bcrypt.compare(request_body.password, user_detail.password))
+      !(await bcrypt.compare(req.body.password, user_detail.password))
     ) {
       return res.status(500).json({
         success: false,
@@ -48,6 +48,12 @@ module.exports.SignIn = async (req, res, next) => {
       process.env.jwt_token_key,
     );
 
+    user_detail.latitude = latitude
+    user_detail.longitude = longitude
+    user_detail.save()
+
+
+
     const userData = {
       id: user_detail._id,
       name: user_detail.name,
@@ -58,8 +64,9 @@ module.exports.SignIn = async (req, res, next) => {
       phoneNumber: user_detail.phoneNumber
     };
 
+    const { password, ...userWithoutPassword } = user_detail.toObject();
     return res.json({
-      user: userData,
+      user: userWithoutPassword,
       status: 200,
       token: token,
       success: true,
@@ -97,7 +104,7 @@ module.exports.verifyOtp = async (req, res) => {
     }
 
     // OTP is correct, move the pending user to the main User collection
-    const { name, phoneNumber, password } = pendingUser;
+    const { name, phoneNumber, password, latitude, longitude } = pendingUser;
 
     // Create a new user record in the User collection
     const newUser = new User({
@@ -105,6 +112,7 @@ module.exports.verifyOtp = async (req, res) => {
       email,
       password,
       phoneNumber,
+      latitude, longitude,
       isVerified: true, // Mark as verified
     });
 
@@ -150,6 +158,11 @@ module.exports.ForgotPassword = async (req, res) => {
       return res.status(404).json({ message: "User not found", success: false, });
     }
 
+    const isOtpSend = await Otp.findOne({ email });
+    if (isOtpSend) {
+      return res.status(404).json({ message: "Otp has been already sent to your registred email address", success: false, });
+    }
+
     const otp = generateOTP();
     console.log("Generated OTP:", otp); // For debugging
 
@@ -158,7 +171,7 @@ module.exports.ForgotPassword = async (req, res) => {
       { email },
       {
         otp,
-        otpExpires: Date.now() + 2 * 60 * 1000,
+        otpExpires: new Date(Date.now() + 2 * 60 * 1000),
       },
       { new: true } // Return the updated document
     );
@@ -187,10 +200,10 @@ module.exports.ForgotPassword = async (req, res) => {
     const userEmail = await Otp.create({
       email,
       otp,
-      otpExpires: Date.now() + 2 * 60 * 1000, // OTP valid for 10 minutes
+      otpExpires: new Date(Date.now() + 2 * 60 * 1000), // Current time + 2 minutes
     });
 
-    return res.status(200).json({ message: "OTP sent to your email", success: true, });
+    return res.status(200).json({ message: "OTP has been sent to your email", success: true, });
   } catch (error) {
     console.error("Error in Forgot Password: ", error);
     return res.status(500).json({ message: "Internal Server Error", success: false, });

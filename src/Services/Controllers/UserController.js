@@ -124,7 +124,7 @@ module.exports.getUserById = async (req, res) => {
 module.exports.createUser = async (req, res, next) => {
   console.log("-----create_user------", TWILLIO_SENDER_NO);
   try {
-    let { name, email, password, phoneNumber } = req.body;
+    let { name, email, password, phoneNumber, latitude, longitude } = req.body;
     const { error } = userSchema.validate(req.body);
 
     if (error) {
@@ -188,6 +188,8 @@ module.exports.createUser = async (req, res, next) => {
       email,
       password: hashedPassword,
       phoneNumber,
+      latitude,
+      longitude,
       otp,
       otpExpires: Date.now() + 2 * 60 * 1000, // OTP valid for 10 minutes
     });
