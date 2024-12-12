@@ -1,4 +1,5 @@
 const crypto = require('crypto')
+const Notification = require('../src/Services/models/notification')
 
 function generateTempPassword() {
   const min = 100000; // Minimum 6-digit number
@@ -17,7 +18,26 @@ const generateOTP = () => {
   return crypto.randomInt(10000, 99999).toString();
 };
 
+const createNotification = async (notificationData) => {
+  try {
+    // Create a new notification instance
+    const notification = new Notification({
+      recipient: notificationData.recipient,
+      sender: notificationData.sender,
+      message: notificationData.message,
+      type: notificationData.type,
+    });
+
+    // Save the notification to the database
+    const savedNotification = await notification.save();
+    return savedNotification;
+  } catch (error) {
+    console.error('Error creating notification:', error);
+    throw new Error('Failed to create notification');
+  }
+};
+
 module.exports = {
   generateTempPassword,
-  generateUniqueToken, generateOTP
+  generateUniqueToken, generateOTP, createNotification
 };

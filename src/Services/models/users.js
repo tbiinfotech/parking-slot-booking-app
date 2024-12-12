@@ -54,6 +54,15 @@ const userSchema = new mongoose.Schema({
     default: 0,
 
   },
+  preferenceLatitude: {
+    type: String, // Store the OTP code
+    default: 0,
+  },
+  preferenceLongitude: {
+    type: String, // Store the OTP code
+    default: 0,
+
+  },
   otp: {
     type: String, // Store the OTP code
   },

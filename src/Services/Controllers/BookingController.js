@@ -98,6 +98,7 @@ exports.createBooking = async (req, res) => {
 
 // Stripe webhook handler
 module.exports.webhook = async (request, response) => {
+    console.log('#webhook')
     const event = request.body;
 
     try {

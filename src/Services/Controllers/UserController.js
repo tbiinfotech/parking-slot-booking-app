@@ -122,7 +122,7 @@ module.exports.getUserById = async (req, res) => {
 
 
 module.exports.createUser = async (req, res, next) => {
-  console.log("-----create_user------", TWILLIO_SENDER_NO);
+  console.log("-----create_user------", TWILLIO_SENDER_NO,":",TWILIO_ACCOUNT_SID,":",TWILIO_AUTH_TOKEN);
   try {
     let { name, email, password, phoneNumber, latitude, longitude } = req.body;
     const { error } = userSchema.validate(req.body);
@@ -172,7 +172,7 @@ module.exports.createUser = async (req, res, next) => {
 
 
     client.messages.create({
-      body: `Your OTP is ${otp} It will expire in 2 minutes`,
+      body: "Hello, there!",
       from: `whatsapp:${TWILLIO_SENDER_NO}`,
       to: `whatsapp:${phoneNumber}`
     }).then(message => console.log(message.sid))
@@ -206,11 +206,6 @@ module.exports.createUser = async (req, res, next) => {
     });
   }
 };
-
-
-
-
-
 
 module.exports.updateUser = async (req, res, next) => {
   try {
@@ -297,8 +292,8 @@ module.exports.updatePreference = async (req, res, next) => {
     }
 
     user.preference = capitalizeFirstLetter(type)
-    user.latitude = latitude
-    user.longitude = longitude
+    user.preferenceLatitude = latitude
+    user.preferenceLongitude = longitude
     user.save();
 
     return res.json({

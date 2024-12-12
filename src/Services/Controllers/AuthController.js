@@ -9,7 +9,7 @@ const PendingUser = require("../models/pendingUsers")
 
 const { signInSchema, emailSchema, passwordSchema } = require('../../libs/schemaValidation')
 const { SendEmail } = require('../../libs/Helper')
-const { generateOTP } = require('./../../../utills/authUtils')
+const { generateOTP, createNotification } = require('./../../../utills/authUtils')
 
 
 // const client = require('twilio')(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, { lazyLoading: true })
@@ -48,8 +48,8 @@ module.exports.SignIn = async (req, res, next) => {
       process.env.jwt_token_key,
     );
 
-    user_detail.latitude = latitude
-    user_detail.longitude = longitude
+    user_detail.preferenceLatitude = latitude
+    user_detail.preferenceLongitude = longitude
     user_detail.save()
 
 
@@ -486,6 +486,19 @@ module.exports.changePassword = async (req, res) => {
     user.password = hashedPassword;
     await user.save();
 
+    console.log('user',user)
+    const notificationData = {
+      recipient: user._id,
+      sender: user._id,
+      message: 'Your password has been changed sucessfully',
+      type: 'password',
+    };
+
+    createNotification(notificationData)
+      .then(notification => console.log('Notification created:', notificationData))
+      .catch(error => console.error('Error:', error));
+
+
     return res.status(200).json({ success: true, message: "Password changed successfully" });
   } catch (error) {
     console.error("Error in Change Password: ", error);
@@ -519,6 +532,8 @@ module.exports.changeForgetPassword = async (req, res) => {
     user.password = hashedPassword;
 
     await user.save();
+
+
 
     return res.status(200).json({ success: true, message: "Password changed successfully" });
   } catch (error) {

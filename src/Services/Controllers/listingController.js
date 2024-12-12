@@ -118,8 +118,6 @@ exports.getAddressByUserLocation = async (req, res) => {
 
         const userInfo = await User.findById(ownerId)
 
-        console.log('userInfo', userInfo)
-        console.log('userInfo preference', userInfo.preference)
 
         // Find all listings for the specified owner
         const listings = await Listing.find({ "$and": [{ ownerId }, { type: userInfo.preference }] })
@@ -229,7 +227,7 @@ exports.getAddressByListId = async (req, res) => {
         // Fetch all listings from the database
         const listings = await Listing.find({ _id: listingId }).populate({
             path: 'owner',
-            select: '_id name' // Specify the fields you want to include
+            select: '_id name latitude longitude' // Specify the fields you want to include
         });
 
         // Extract addresses from listings
@@ -305,7 +303,6 @@ exports.getFavoriteAddresses = async (req, res) => {
         }
 
 
-        console.log('getFavoriteAddresses user', user)
         // Extract addresses from favorites
         const favoriteAddresses = user.favorites.map(listing => listing);
 
@@ -359,7 +356,6 @@ exports.removeListing = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Listing not found.' });
         }
 
-        console.log('req.user', req.user)
         // Check if the requester is the owner of the listing
         if (listing.owner.toString() !== req.user.id && req.user.role !== 'owner') {
             return res.status(403).json({ success: false, message: 'You are not authorized to delete this listing.' });
@@ -532,7 +528,6 @@ exports.updateListing = async (req, res) => {
             listing.photos = req.files.map(file => file.path.replace(/^public\//, ''));
         }
 
-        console.log('typeOfSpace', typeOfSpace)
         // Validate required fields
         // const { error, value } = rentalListingSchema.validate({
         //     title,
@@ -656,8 +651,24 @@ exports.searchListings = async (req, res) => {
 };
 
 
+// function haversine(lat1, lon1, lat2, lon2) {
+//     const R = 3959; // Radius of the Earth in miles
+//     const phi1 = lat1 * Math.PI / 180;
+//     const phi2 = lat2 * Math.PI / 180;
+//     const deltaPhi = (lat2 - lat1) * Math.PI / 180;
+//     const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+
+//     const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+//         Math.cos(phi1) * Math.cos(phi2) *
+//         Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+//     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+//     return R * c; // Distance in miles
+// }
+
+
 function haversine(lat1, lon1, lat2, lon2) {
-    const R = 3959; // Radius of the Earth in miles
+    const R = 6371; // Radius of the Earth in kilometers
     const phi1 = lat1 * Math.PI / 180;
     const phi2 = lat2 * Math.PI / 180;
     const deltaPhi = (lat2 - lat1) * Math.PI / 180;
@@ -668,7 +679,7 @@ function haversine(lat1, lon1, lat2, lon2) {
         Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-    return R * c; // Distance in miles
+    return R * c; // Distance in kilometers
 }
 
 
@@ -699,17 +710,20 @@ function filterByPlanType(listings, type) {
 
 exports.getListingsWithinRadius = async (req, res) => {
     try {
-        const user = await User.findById(req.user.id)
-        const radiusInMiles = 12;
+        const user = await User.findById(req.user.id);
+        const radiusInMiles = 400;
 
-        const latitude = user.latitude
-        const longitude = user.longitude
+        // Convert radius to kilometers
+        const radiusInKilometers = radiusInMiles * 1.60934;
+
+        const latitude = user.preferenceLatitude;
+        const longitude = user.preferenceLongitude;
 
         // Validate inputs
-        if (!latitude || !longitude || !radiusInMiles) {
+        if (!latitude || !longitude || !radiusInKilometers) {
             return res.status(400).json({
                 success: false,
-                message: "Please provide latitude, longitude, and radiusInMiles.",
+                message: "Please provide latitude, longitude, and radiusInKilometers.",
             });
         }
 
@@ -720,12 +734,19 @@ exports.getListingsWithinRadius = async (req, res) => {
         const listings = await Listing.find();
 
         // Filter listings based on distance using Haversine formula
-        const nearbyListings = listings.filter(listing => {
-            const listingLat = listing.location.coordinates[1]; // latitude
-            const listingLon = listing.location.coordinates[0]; // longitude
-            const distance = haversine(latitude, longitude, listingLat, listingLon);
-            return distance <= radiusInMiles;
-        });
+        const nearbyListings = listings
+            .map(listing => {
+                const listingLat = listing.location.coordinates[1]; // latitude
+                const listingLon = listing.location.coordinates[0]; // longitude
+                const distance = haversine(latitude, longitude, listingLat, listingLon);
+                
+                // Attach distance to the listing
+                return {
+                    ...listing.toObject(), // Ensure it's a plain object
+                    distance,
+                };
+            })
+            .filter(listing => listing.distance <= radiusInKilometers);
 
         // Check if any listings are found
         if (nearbyListings.length === 0) {
@@ -735,14 +756,12 @@ exports.getListingsWithinRadius = async (req, res) => {
             });
         }
 
-
         const updatedListings = markFavorites(nearbyListings, user.favorites);
         const filterByPlan = filterByPlanType(updatedListings, user.preference);
 
-
         return res.status(200).json({
             success: true,
-            listings: filterByPlan
+            listings: filterByPlan,
         });
     } catch (error) {
         console.error('Error in getListingsWithinRadius:', error);
@@ -752,3 +771,98 @@ exports.getListingsWithinRadius = async (req, res) => {
         });
     }
 };
+
+
+
+
+
+exports.getFilterListing = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+
+        const latitude = user.preferenceLatitude;
+        const longitude = user.preferenceLongitude;
+
+        // Extract query parameters from the request
+        const { radiusInMiles, type, plan, minPrice, maxPrice } = req.query;
+
+
+        const radiusInKilometers = radiusInMiles * 1.60934;
+
+        // Log the coordinates being passed
+        console.log("Querying listings around coordinates:", [longitude, latitude]);
+
+        // Fetch all listings
+        const listings = await Listing.find();
+
+        // Validate radiusInMiles
+        if (!radiusInKilometers) {
+            return res.status(400).json({
+                success: false,
+                message: "Please provide a valid radiusInKilometers value.",
+            });
+        }
+
+      
+
+        const nearbyListings = listings
+        .map(listing => {
+            const listingLat = listing.location.coordinates[1]; // latitude
+            const listingLon = listing.location.coordinates[0]; // longitude
+            const distance = haversine(latitude, longitude, listingLat, listingLon);
+            
+            // Attach distance to the listing
+            return {
+                ...listing.toObject(), // Ensure it's a plain object
+                distance,
+            };
+        })
+        .filter(listing => listing.distance <= radiusInKilometers);
+
+
+        // Apply further filters based on type, plan, and price range
+        let filteredListings = nearbyListings;
+
+        if (type) {
+            filteredListings = filteredListings.filter(listing => listing.type === type);
+        }
+
+        if (plan) {
+            filteredListings = filteredListings.filter(listing => listing.plan === plan);
+        }
+
+        if (minPrice || maxPrice) {
+            filteredListings = filteredListings.filter(listing => {
+                const price = parseFloat(listing.price); // Assuming price is stored as string in the database
+                return (
+                    (minPrice ? price >= parseFloat(minPrice) : true) &&
+                    (maxPrice ? price <= parseFloat(maxPrice) : true)
+                );
+            });
+        }
+
+        // If no listings are found after filtering
+        if (filteredListings.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "No listings found with the specified filters.",
+            });
+        }
+
+        // Optionally mark as favorite or other custom processing
+        const updatedListings = markFavorites(filteredListings, user.favorites);
+
+        // Return the filtered listings
+        return res.status(200).json({
+            success: true,
+            listings: updatedListings,
+        });
+    } catch (error) {
+        console.error('Error in getFilterListing:', error);
+        return res.status(500).json({
+            success: false,
+            message: "An error occurred while fetching listings.",
+        });
+    }
+};
+

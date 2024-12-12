@@ -15,6 +15,8 @@ const BookingController = require('./Controllers/BookingController')
 const PaymentController = require('./Controllers/PaymentController')
 const TransactionController = require('./Controllers/TransactionController')
 const StripeKeysController = require('./Controllers/StripeKyeController')
+const NotificationController = require('./Controllers/NotificationController')
+
 
 /*** Auth Routers ***/
 router.post("/api/sign-in", AuthController.SignIn);
@@ -88,6 +90,7 @@ router.get("/api/addresses-with-pagination", authorize(), ListingController.getA
 router.get("/api/listings/home", authorize(), ListingController.getListingsWithinRadius);
 router.get("/api/address-user-location", authorize(), ListingController.getAddressByUserLocation);
 
+router.get("/api/filter-listings", authorize(), ListingController.getFilterListing);
 
 router.post('/api/favorites', authorize(), ListingController.addToFavorites);
 router.get('/api/favorites', authorize(), ListingController.getFavoriteAddresses);
@@ -129,11 +132,11 @@ router.get('/api/test', BookingController.test)
 
 router.get('/api/transactions', TransactionController.getAllTransactions)
 router.post('/api/transactions', TransactionController.createTransaction)
-
-/*** Payment controller ***/
-
 router.post('/api/save-stripe-keys', StripeKeysController.saveStripeKeys);
 
+
+/*** Notification controller ***/
+router.get('/api/check-notification', authorize(), NotificationController.checkNotification)
 
 
 
