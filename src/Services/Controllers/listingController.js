@@ -3,6 +3,7 @@ const User = require('../models/users')
 const { rentalListingSchema } = require('../../libs/schemaValidation')
 const stripe = require('stripe')(`${process.env.STRIPE_KEY}`);
 const fs = require('fs');
+const geolib = require('geolib');
 
 // 1. Create a new listing
 exports.createListing = async (req, res) => {
@@ -710,8 +711,9 @@ function filterByPlanType(listings, type) {
 
 exports.getListingsWithinRadius = async (req, res) => {
     try {
+
         const user = await User.findById(req.user.id);
-        const radiusInMiles = 400;
+        const radiusInMiles = 100;
 
         // Convert radius to kilometers
         const radiusInKilometers = radiusInMiles * 1.60934;
@@ -733,20 +735,23 @@ exports.getListingsWithinRadius = async (req, res) => {
         // Fetch all listings
         const listings = await Listing.find();
 
+
+
         // Filter listings based on distance using Haversine formula
         const nearbyListings = listings
-            .map(listing => {
-                const listingLat = listing.location.coordinates[1]; // latitude
-                const listingLon = listing.location.coordinates[0]; // longitude
-                const distance = haversine(latitude, longitude, listingLat, listingLon);
-                
-                // Attach distance to the listing
+            .map((listing, index) => {
+                const point1 = { latitude: latitude, longitude: longitude }; // Berlin
+                const point2 = { latitude: listing.location.coordinates[0], longitude: listing.location.coordinates[1] }; // Paris
+                const distance = geolib.getDistance(point1, point2);
+              
                 return {
                     ...listing.toObject(), // Ensure it's a plain object
-                    distance,
+                    distance: distance / 1000,
+
                 };
-            })
-            .filter(listing => listing.distance <= radiusInKilometers);
+            }).filter(listing => listing.distance <= radiusInKilometers);
+
+
 
         // Check if any listings are found
         if (nearbyListings.length === 0) {
@@ -803,21 +808,18 @@ exports.getFilterListing = async (req, res) => {
             });
         }
 
-      
-
         const nearbyListings = listings
-        .map(listing => {
-            const listingLat = listing.location.coordinates[1]; // latitude
-            const listingLon = listing.location.coordinates[0]; // longitude
-            const distance = haversine(latitude, longitude, listingLat, listingLon);
-            
-            // Attach distance to the listing
-            return {
-                ...listing.toObject(), // Ensure it's a plain object
-                distance,
-            };
-        })
-        .filter(listing => listing.distance <= radiusInKilometers);
+            .map((listing, index) => {
+                const point1 = { latitude: latitude, longitude: longitude }; // Berlin
+                const point2 = { latitude: listing.location.coordinates[0], longitude: listing.location.coordinates[1] }; // Paris
+                const distance = geolib.getDistance(point1, point2);
+               
+                return {
+                    ...listing.toObject(), // Ensure it's a plain object
+                    distance: distance / 1000,
+
+                };
+            }).filter(listing => listing.distance <= radiusInKilometers);
 
 
         // Apply further filters based on type, plan, and price range

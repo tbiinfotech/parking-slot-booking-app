@@ -126,7 +126,7 @@ router.post('/api/booking', authorize(), BookingController.createBooking);
 router.post('/api/create-connected-account', authorize(), PaymentController.createConnectedAccount);
 
 
-router.post('/webhook', express.raw({ type: 'application/json' }), BookingController.webhook)
+router.post('/api/booking-webhook', express.raw({ type: 'application/json' }), BookingController.webhook)
 
 router.get('/api/test', BookingController.test)
 

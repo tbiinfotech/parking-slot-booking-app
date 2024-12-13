@@ -51,13 +51,19 @@ const checkNotification = async (req, res) => {
         const unreadNotifications = await Notification.find({ recipient: userId, isRead: 0 });
 
         // Send response with updated notifications or all notifications if no update
+
+
+
         res.status(200).json({
-            Notifications: markAsRead === 'true' ? updatedNotifications : allNotifications,
-            status: unreadNotifications.length > 0 ? false : true,
+            ...(markAsRead === 'true' && { Notifications: updatedNotifications }),
+            isRead: unreadNotifications.length > 0 ? false : true,
+            success: true,
+            status: 200,
             message: unreadNotifications.length > 0
                 ? 'You have unread notifications.'
                 : 'All notifications are read.',
         });
+
     } catch (error) {
         console.error('Error in checkNotification:', error);
         res.status(500).json({ error: 'Server error. Please try again.' });
