@@ -25,6 +25,8 @@ exports.createBooking = async (req, res) => {
 
         const connectedAccountId = userInfo.stripeAccountId;
 
+        console.log('connectedAccountId',connectedAccountId)
+
 
         // console.log('userInfo', userInfo)
         // Create the Stripe checkout session with metadata
@@ -64,7 +66,7 @@ exports.createBooking = async (req, res) => {
             }
         );
 
-
+        console.log('session', session)
         // Create the booking object
         const booking = await Booking.create({
             fullname,
@@ -99,8 +101,9 @@ exports.createBooking = async (req, res) => {
 // Stripe webhook handler
 module.exports.webhook = async (request, response) => {
     console.log('#webhook')
-    const event = request.body;
+    console.log('#request.body',request.body)
 
+    const event = request.body;
     try {
         switch (event.type) {
             case 'checkout.session.completed':
