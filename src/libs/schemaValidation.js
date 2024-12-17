@@ -108,10 +108,10 @@ const signInSchema = Joi.object({
         'string.min': 'Password must be at least 8 characters long',
         'any.required': 'Password is required',
     }),
-    latitude: Joi.string().required().messages({
+    latitude: Joi.string().allow('').optional().messages({
         'string.empty': 'latitude cannot be empty',
     }),
-    longitude: Joi.string().required().messages({
+    longitude: Joi.string().allow('').optional().messages({
         'string.empty': 'longitude cannot be empty',
     }),
 });
