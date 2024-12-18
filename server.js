@@ -27,13 +27,14 @@ app.use(express.static(path.join(__dirname, "public")));
 // Include Services API File
 app.use(require("./src/Services"));
 
+if (process.env.SITE_ENVIRONMENT == 'production') {
 
-// app.use(express.static(path.join(__dirname, "./react/dist")));
+  app.use(express.static(path.join(__dirname, "./react/dist")));
 
-// app.get("*", (req, res) => {
-//   res.sendFile(path.join(__dirname, "./react/dist/index.html"));
-// });
-
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "./react/dist/index.html"));
+  });
+}
 /*** Create HTTPs server. ***/
 let http_options = {};
 let https = require("https");
@@ -42,7 +43,7 @@ console.log("SITE_ENVIRONMENT", process.env.SITE_ENVIRONMENT);
 
 /*** Get port from environment and store in Express. ***/
 
-if (false) {
+if (process.env.SITE_ENVIRONMENT == 'production') {
   console.log("production Environment");
   http_options = {
     ...http_options,
