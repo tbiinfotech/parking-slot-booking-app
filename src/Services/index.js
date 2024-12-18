@@ -121,10 +121,8 @@ router.post(
 
 router.post('/api/booking', authorize(), BookingController.createBooking);
 
-
 /*** Payment controller ***/
 router.post('/api/create-connected-account', authorize(), PaymentController.createConnectedAccount);
-
 
 router.post('/api/booking-webhook', express.raw({ type: 'application/json' }), BookingController.webhook)
 
@@ -137,7 +135,7 @@ router.post('/api/save-stripe-keys', StripeKeysController.saveStripeKeys);
 
 /*** Notification controller ***/
 router.get('/api/check-notification', authorize(), NotificationController.checkNotification)
-
+router.post('/api/send-notification', authorize(), NotificationController.sendPushNotificationNew )
 
 
 module.exports = router;

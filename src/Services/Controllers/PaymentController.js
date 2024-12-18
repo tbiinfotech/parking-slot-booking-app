@@ -50,6 +50,8 @@ module.exports.createConnectedAccount = async (req, res) => {
             country: 'AT', // Specify the correct country (in your case, Austria)
         });
 
+        console.log('account',account)
+
         // Step 2: Generate an account link for onboarding
         const accountLink = await stripe.accountLinks.create({
             account: account.id,

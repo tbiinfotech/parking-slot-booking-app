@@ -26,6 +26,7 @@ exports.createBooking = async (req, res) => {
         const connectedAccountId = userInfo.stripeAccountId;
 
         console.log('connectedAccountId',connectedAccountId)
+        console.log('userInfo',userInfo)
 
 
         // console.log('userInfo', userInfo)
