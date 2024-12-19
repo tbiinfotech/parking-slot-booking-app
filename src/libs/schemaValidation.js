@@ -13,6 +13,7 @@ const userSchema = Joi.object({
         'string.email': 'Email must be a valid email',
         'any.required': 'Email is required',
     }),
+    deviceId: Joi.string().optional().messages({}),
     latitude: Joi.string().required().messages({
         'string.empty': 'latitude cannot be empty',
     }),
@@ -108,6 +109,7 @@ const signInSchema = Joi.object({
         'string.min': 'Password must be at least 8 characters long',
         'any.required': 'Password is required',
     }),
+    deviceId: Joi.string().optional().messages({}),
     latitude: Joi.string().allow('').optional().messages({
         'string.empty': 'latitude cannot be empty',
     }),

@@ -111,8 +111,7 @@ module.exports.webhook = async (request, response) => {
                 console.log('checkout.session.completed');
 
                 // Retrieve the invoice from the event data
-                const invoice = await stripe.invoices.retrieve(event.data.object.invoice);
-                console.log('Invoice Retrieved:', invoice);
+                // const invoice = await stripe.invoices.retrieve(event.data.object.invoice);
 
                 // Extract necessary details from the session object
                 const session = event.data.object;

@@ -20,6 +20,10 @@ const PendingUserSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    deviceId: {
+      type: String,
+      default: ""
+    },
     latitude: {
       type: String, // Store the OTP code
       default: 0,

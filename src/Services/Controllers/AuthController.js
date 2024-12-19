@@ -20,7 +20,7 @@ const client = require('twilio')(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 
 module.exports.SignIn = async (req, res, next) => {
   try {
-    const { email, latitude, longitude } = req.body;
+    const { email, latitude, longitude, deviceId } = req.body;
     const { error } = signInSchema.validate(req.body)
 
     if (error) {
@@ -50,6 +50,7 @@ module.exports.SignIn = async (req, res, next) => {
 
     user_detail.preferenceLatitude = latitude
     user_detail.preferenceLongitude = longitude
+    user_detail.deviceId = deviceId
     user_detail.save()
 
 
@@ -61,7 +62,8 @@ module.exports.SignIn = async (req, res, next) => {
       role: user_detail.role,
       age: user_detail.age,
       status: user_detail.status,
-      phoneNumber: user_detail.phoneNumber
+      phoneNumber: user_detail.phoneNumber,
+      deviceId
     };
 
     const { password, ...userWithoutPassword } = user_detail.toObject();
@@ -104,7 +106,7 @@ module.exports.verifyOtp = async (req, res) => {
     }
 
     // OTP is correct, move the pending user to the main User collection
-    const { name, phoneNumber, password, latitude, longitude } = pendingUser;
+    const { name, phoneNumber, password, latitude, longitude, deviceId } = pendingUser;
 
     // Create a new user record in the User collection
     const newUser = new User({
@@ -112,6 +114,7 @@ module.exports.verifyOtp = async (req, res) => {
       email,
       password,
       phoneNumber,
+      deviceId,
       latitude, longitude,
       isVerified: true, // Mark as verified
     });
@@ -486,7 +489,7 @@ module.exports.changePassword = async (req, res) => {
     user.password = hashedPassword;
     await user.save();
 
-    console.log('user',user)
+    console.log('user', user)
     const notificationData = {
       recipient: user._id,
       sender: user._id,

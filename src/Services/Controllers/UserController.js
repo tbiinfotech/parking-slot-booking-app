@@ -122,9 +122,9 @@ module.exports.getUserById = async (req, res) => {
 
 
 module.exports.createUser = async (req, res, next) => {
-  console.log("-----create_user------", TWILLIO_SENDER_NO,":",TWILIO_ACCOUNT_SID,":",TWILIO_AUTH_TOKEN);
+  console.log("-----create_user------", TWILLIO_SENDER_NO, ":", TWILIO_ACCOUNT_SID, ":", TWILIO_AUTH_TOKEN);
   try {
-    let { name, email, password, phoneNumber, latitude, longitude } = req.body;
+    let { name, email, password, phoneNumber, latitude, longitude, deviceId } = req.body;
     const { error } = userSchema.validate(req.body);
 
     if (error) {
@@ -164,23 +164,25 @@ module.exports.createUser = async (req, res, next) => {
         from: '+13345186584',
         to: phoneNumber,
       });*/
-    // await client.messages.create({
-    //   body: `Your OTP code is ${otp}. It will expire in 10 minutes.`,
-    //   from: 'whatsapp:+14155238886',
-    //   to: `whatsapp:${phoneNumber}`
-    // });
-
-
-    client.messages.create({
-      body: "Hello, there!",
+    await client.messages.create({
+      body: `Your otp is ${otp}`,
       from: `whatsapp:${TWILLIO_SENDER_NO}`,
       to: `whatsapp:${phoneNumber}`
-    }).then(message => console.log(message.sid))
+    });
+
+
     // client.messages.create({
-    //   body: `Your OTP code is ${otp}. It will expire in 10 minutes.`,
+    //   body: `Your OTP code is ${otp}. It will expire in 2 minutes.`,
+    //   from: `whatsapp:${TWILLIO_SENDER_NO}`,
+    //   to: `whatsapp:${phoneNumber}`
+    // }).then(message => console.log(message.sid))
+
+
+    // client.messages.create({
+    //   body: `Your OTP code is ${otp}. It will expire in 2 minutes.`,
     //   from: 'whatsapp:+14155238886',
     //   to: `whatsapp:${phoneNumber}`
-    // }).then(message => console.log("whatsup message id:", message.sid)).done();
+    // }).then(message => console.log("whatsup message id:", message.sid));
 
     // Save user data in the PendingUser collection
     const pendingUser = await PendingUser.create({
@@ -190,8 +192,9 @@ module.exports.createUser = async (req, res, next) => {
       phoneNumber,
       latitude,
       longitude,
+      deviceId,
       otp,
-      otpExpires: Date.now() + 2 * 60 * 1000, // OTP valid for 10 minutes
+      otpExpires: Date.now() + 2 * 60 * 1000, // OTP valid for 2 minutes
     });
 
     return res.status(200).json({
