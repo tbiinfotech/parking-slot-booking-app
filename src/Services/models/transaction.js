@@ -45,7 +45,7 @@ const PaymentSchema = new Schema(
       enum: ['pending', 'completed', 'failed'],
       default: 'pending',  // Status of the payment
     },
-    bookingStatus: {
+    bookingStatus: {        
       type: String,
       enum: ['confirmed', 'pending', 'cancelled'],
       default: 'pending',  // Booking status after payment confirmation

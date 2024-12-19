@@ -25,8 +25,8 @@ exports.createBooking = async (req, res) => {
 
         const connectedAccountId = userInfo.stripeAccountId;
 
-        console.log('connectedAccountId',connectedAccountId)
-        console.log('userInfo',userInfo)
+        console.log('connectedAccountId', connectedAccountId)
+        console.log('userInfo', userInfo)
 
 
         // console.log('userInfo', userInfo)
@@ -67,7 +67,6 @@ exports.createBooking = async (req, res) => {
             }
         );
 
-        console.log('session', session)
         // Create the booking object
         const booking = await Booking.create({
             fullname,
@@ -82,13 +81,13 @@ exports.createBooking = async (req, res) => {
             paymentStatus: 'pending',
         });
 
-        console.log('booking', booking)
         // Return the session ID to the client so they can complete the payment
         res.status(200).json({
             success: true,
             message: 'Payment session created, proceed to payment.',
             stripeSessionId: session.id, // Send session ID to the client for payment redirection
-            connectedAccountId
+            connectedAccountId,
+            paymentUrl: session.url
         });
     } catch (error) {
         console.error('Error creating booking:', error);
@@ -101,8 +100,7 @@ exports.createBooking = async (req, res) => {
 
 // Stripe webhook handler
 module.exports.webhook = async (request, response) => {
-    console.log('#webhook')
-    console.log('#request.body',request.body)
+    console.log('---------------- connected account webhook---------------------------')
 
     const event = request.body;
     try {
@@ -115,22 +113,19 @@ module.exports.webhook = async (request, response) => {
 
                 // Extract necessary details from the session object
                 const session = event.data.object;
-                const userId = session.client_reference_id;  // Use the client_reference_id to link to the user
+                // const userId = session.client_reference_id;  
 
                 // Assuming the metadata contains the booking information
-                const { fullname, phoneNumber, vehicleNumber, fromDate, toDate, time, listingId } = session.metadata;
+                const { fullname, phoneNumber, vehicleNumber, fromDate, toDate, time, listingId, userId } = session.metadata;
 
                 // Retrieve the user information from the database
                 const userInfo = await User.findById(userId);
                 const listInfo = await Listing.findById(listingId);
-
                 const booking = await Booking.findOne({ userId, listingId, status: 'pending' });
-                console.log('webhookcbooking', booking);
-                console.log('session', session);
 
-                console.log('userId', userId);
+                const hostInfo = await User.findById(listInfo.owner);
 
-
+                console.log('Latest session', session);
 
                 // If no booking is found, exit
                 if (!booking) {
@@ -138,13 +133,12 @@ module.exports.webhook = async (request, response) => {
                 }
 
                 // Update the booking with payment and status changes
-                booking.status = 'confirmed'; // Set status to confirmed after payment success
-                booking.paymentStatus = 'succeeded'; // Mark the payment as successful
+                booking.status = 'confirmed';
+                booking.paymentStatus = 'completed'; 
 
                 // Save the updated booking in the database
                 await booking.save();
 
-                // Save the booking in the database
 
                 // Now, prepare and save the payment transaction data
                 const paymentData = preparePaymentData(session);
@@ -153,13 +147,13 @@ module.exports.webhook = async (request, response) => {
                 const transaction = new Transaction({
                     transactionId: session.payment_intent,
                     date: new Date(),
-                    customerName: userInfo.fullname,
+                    customerName: userInfo.name,
                     customerPhoneNumber: phoneNumber.trim(),
-                    hostName: listInfo.hostName,
+                    hostName: hostInfo.name,
                     listingId: listInfo._id,
                     listingTitle: listInfo.title,
                     amount: session.amount_total / 100, // Convert amount to the main currency unit (e.g., USD)
-                    paymentStatus: 'succeeded',  // Assuming payment succeeded
+                    paymentStatus: 'completed',  // Assuming payment succeeded
                     paymentMethod: session.payment_method_types[0] || 'Unknown',  // Stripe payment method
                     stripeSessionId: session.id, // Reference to Stripe session ID
                     userId: userId,  // Link the transaction to the user
