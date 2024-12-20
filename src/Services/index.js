@@ -90,7 +90,9 @@ router.get("/api/addresses-with-pagination", authorize(), ListingController.getA
 router.get("/api/listings/home", authorize(), ListingController.getListingsWithinRadius);
 router.get("/api/address-user-location", authorize(), ListingController.getAddressByUserLocation);
 
-router.get("/api/filter-listings", authorize(), ListingController.getFilterListing);
+router.get("/api/filter-listings", authorize(), ListingController.UpdateFilter);
+router.get("/api/clear-filter", authorize(), ListingController.clearFilter);
+
 
 router.post('/api/favorites', authorize(), ListingController.addToFavorites);
 router.get('/api/favorites', authorize(), ListingController.getFavoriteAddresses);
@@ -135,7 +137,7 @@ router.post('/api/save-stripe-keys', StripeKeysController.saveStripeKeys);
 
 /*** Notification controller ***/
 router.get('/api/check-notification', authorize(), NotificationController.checkNotification)
-router.post('/api/send-notification', authorize(), NotificationController.sendPushNotificationNew )
+router.post('/api/send-notification', authorize(), NotificationController.sendPushNotificationNew)
 
 
 module.exports = router;

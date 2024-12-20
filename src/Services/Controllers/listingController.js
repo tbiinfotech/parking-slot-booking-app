@@ -1,5 +1,6 @@
 const Listing = require('../models/Listing');
 const User = require('../models/users')
+const Filter = require('../models/filterListing')
 const { rentalListingSchema } = require('../../libs/schemaValidation')
 const stripe = require('stripe')(`${process.env.STRIPE_KEY}`);
 const fs = require('fs');
@@ -709,25 +710,118 @@ function filterByPlanType(listings, type) {
     return updatedListingByPlan;
 }
 
-exports.getListingsWithinRadius = async (req, res) => {
+exports.UpdateFilter = async (req, res) => {
+
+    console.log("--------update filter-----------")
     try {
+        const userId = req.user.id
+        const { radiusInMiles, type, plan, minPrice, maxPrice } = req.query;
 
-        const user = await User.findById(req.user.id);
-        const radiusInMiles = 100;
+        // Check if the user exists
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
 
-        // Convert radius to kilometers
-        const radiusInKilometers = radiusInMiles * 1.60934;
+        // Find an existing filter for the user
+        let filter = await Filter.findOne({ userId });
+
+        if (filter) {
+            // If filter exists, update the existing filter
+            filter.radiusInMiles = radiusInMiles || filter.radiusInMiles;
+            filter.type = type || filter.type;
+            filter.plan = plan || filter.plan;
+            filter.minPrice = minPrice || filter.minPrice;
+            filter.maxPrice = maxPrice || filter.maxPrice;
+
+            // Save the updated filter
+            await filter.save();
+
+            return res.status(200).json({
+                success: true,
+                message: "Filter updated successfully",
+                filter,
+            });
+        } else {
+            // If filter does not exist, create a new one
+            filter = new Filter({
+                userId,
+                radiusInMiles,
+                type,
+                plan,
+                minPrice,
+                maxPrice,
+            });
+
+            // Save the new filter
+            await filter.save();
+
+            return res.status(201).json({
+                success: true,
+                message: "Filter created successfully",
+                filter,
+            });
+        }
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: "Server error, failed to create or update filter",
+        });
+    }
+};
+
+exports.clearFilter = async (req, res) => {
+    console.log("--------clear filter-----------");
+
+    try {
+        const userId = req.user.id;
+
+        // Check if the user exists
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        // Find the filter associated with the user
+        const filter = await Filter.findOne({ userId });
+
+        if (filter) {
+            // If the filter exists, remove it
+            await Filter.deleteOne({ userId });
+
+            return res.status(200).json({
+                success: true,
+                message: "Filter cleared successfully",
+            });
+        } else {
+            // If no filter exists for the user
+            return res.status(404).json({
+                success: false,
+                message: "No filter found for this user",
+            });
+        }
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: "Server error, failed to clear filter",
+        });
+    }
+};
+
+const getFilterAddress = async (userId, queryParams) => {
+    try {
+        const user = await User.findById(userId);
+        const { radiusInMiles, type, plan, minPrice, maxPrice } = queryParams;
 
         const latitude = user.preferenceLatitude;
         const longitude = user.preferenceLongitude;
 
-        // Validate inputs
-        if (!latitude || !longitude || !radiusInKilometers) {
-            return res.status(400).json({
-                success: false,
-                message: "Please provide latitude, longitude, and radiusInKilometers.",
-            });
-        }
+        // Extract query parameters from the request
+
+
+        const radiusInKilometers = radiusInMiles * 1.60934;
 
         // Log the coordinates being passed
         console.log("Querying listings around coordinates:", [longitude, latitude]);
@@ -735,15 +829,20 @@ exports.getListingsWithinRadius = async (req, res) => {
         // Fetch all listings
         const listings = await Listing.find();
 
+        // Validate radiusInMiles
+        if (!radiusInKilometers) {
+            return res.status(400).json({
+                success: false,
+                message: "Please provide a valid radiusInKilometers value.",
+            });
+        }
 
-
-        // Filter listings based on distance using Haversine formula
         const nearbyListings = listings
             .map((listing, index) => {
                 const point1 = { latitude: latitude, longitude: longitude }; // Berlin
                 const point2 = { latitude: listing.location.coordinates[0], longitude: listing.location.coordinates[1] }; // Paris
                 const distance = geolib.getDistance(point1, point2);
-              
+
                 return {
                     ...listing.toObject(), // Ensure it's a plain object
                     distance: distance / 1000,
@@ -752,22 +851,128 @@ exports.getListingsWithinRadius = async (req, res) => {
             }).filter(listing => listing.distance <= radiusInKilometers);
 
 
+        // Apply further filters based on type, plan, and price range
+        let filteredListings = nearbyListings;
 
-        // Check if any listings are found
-        if (nearbyListings.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "No listings found within the specified radius.",
+        if (type) {
+            filteredListings = filteredListings.filter(listing => listing.type === type);
+        }
+
+        if (plan) {
+            filteredListings = filteredListings.filter(listing => listing.plan === plan);
+        }
+
+        if (minPrice || maxPrice) {
+            filteredListings = filteredListings.filter(listing => {
+                const price = parseFloat(listing.price); // Assuming price is stored as string in the database
+                return (
+                    (minPrice ? price >= parseFloat(minPrice) : true) &&
+                    (maxPrice ? price <= parseFloat(maxPrice) : true)
+                );
             });
         }
 
-        const updatedListings = markFavorites(nearbyListings, user.favorites);
-        const filterByPlan = filterByPlanType(updatedListings, user.preference);
+        // If no listings are found after filtering
+        if (filteredListings.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "No listings found with the specified filters.",
+            });
+        }
 
-        return res.status(200).json({
-            success: true,
-            listings: filterByPlan,
-        });
+        // Optionally mark as favorite or other custom processing
+        const updatedListings = markFavorites(filteredListings, user.favorites);
+
+        // Return the filtered listings
+        return updatedListings;
+    } catch (error) {
+        console.error('Error in getFilterListing:', error);
+
+    }
+};
+
+
+exports.getListingsWithinRadius = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        const userFilterInfo = await Filter.find({ userId: req.user.id });
+        console.log('userFilterInfo', userFilterInfo[0])
+
+        const { radiusInMiles = 100, type = '', plan = '', minPrice = 0, maxPrice = 0 } = userFilterInfo[0] || {};
+
+        if (radiusInMiles || type || plan || minPrice || maxPrice) {
+
+            const queryParams = {
+                radiusInMiles, type, plan, minPrice, maxPrice
+            }
+            const filterList = await getFilterAddress(req.user.id, queryParams)
+            return res.status(200).json({
+                success: true,
+                listings: filterList,
+                type: 'filter'
+            });
+
+        } else {
+
+
+
+            const radiusInMiles = 100;
+
+            // Convert radius to kilometers
+            const radiusInKilometers = radiusInMiles * 1.60934;
+
+            const latitude = user.preferenceLatitude;
+            const longitude = user.preferenceLongitude;
+
+            // Validate inputs
+            if (!latitude || !longitude || !radiusInKilometers) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Please provide latitude, longitude, and radiusInKilometers.",
+                });
+            }
+
+            // Log the coordinates being passed
+            console.log("Querying listings around coordinates:", [longitude, latitude]);
+
+            // Fetch all listings
+            const listings = await Listing.find();
+
+
+
+            // Filter listings based on distance using Haversine formula
+            const nearbyListings = listings
+                .map((listing, index) => {
+                    const point1 = { latitude: latitude, longitude: longitude }; // Berlin
+                    const point2 = { latitude: listing.location.coordinates[0], longitude: listing.location.coordinates[1] }; // Paris
+                    const distance = geolib.getDistance(point1, point2);
+
+                    return {
+                        ...listing.toObject(), // Ensure it's a plain object
+                        distance: distance / 1000,
+
+                    };
+                }).filter(listing => listing.distance <= radiusInKilometers);
+
+
+
+            // Check if any listings are found
+            if (nearbyListings.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: "No listings found within the specified radius.",
+                });
+            }
+
+            const updatedListings = markFavorites(nearbyListings, user.favorites);
+            const filterByPlan = filterByPlanType(updatedListings, user.preference);
+
+            return res.status(200).json({
+                success: true,
+                listings: filterByPlan,
+                type: 'home'
+            });
+        }
     } catch (error) {
         console.error('Error in getListingsWithinRadius:', error);
         return res.status(500).json({
@@ -813,7 +1018,7 @@ exports.getFilterListing = async (req, res) => {
                 const point1 = { latitude: latitude, longitude: longitude }; // Berlin
                 const point2 = { latitude: listing.location.coordinates[0], longitude: listing.location.coordinates[1] }; // Paris
                 const distance = geolib.getDistance(point1, point2);
-               
+
                 return {
                     ...listing.toObject(), // Ensure it's a plain object
                     distance: distance / 1000,

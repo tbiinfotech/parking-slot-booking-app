@@ -161,10 +161,10 @@ module.exports.ForgotPassword = async (req, res) => {
       return res.status(404).json({ message: "User not found", success: false, });
     }
 
-    const isOtpSend = await Otp.findOne({ email });
-    if (isOtpSend) {
-      return res.status(404).json({ message: "Otp has been already sent to your registred email address", success: false, });
-    }
+    // const isOtpSend = await Otp.findOne({ email });
+    // if (isOtpSend) {
+    //   return res.status(404).json({ message: "Otp has been already sent to your registred email address", success: false, });
+    // }
 
     const otp = generateOTP();
     console.log("Generated OTP:", otp); // For debugging
@@ -200,11 +200,23 @@ module.exports.ForgotPassword = async (req, res) => {
         console.log("Nodemailer error ---------- ", error);
       });
 
-    const userEmail = await Otp.create({
-      email,
-      otp,
-      otpExpires: new Date(Date.now() + 2 * 60 * 1000), // Current time + 2 minutes
-    });
+    const existingOtp = await Otp.findOne({ email });
+
+    if (existingOtp) {
+      // If it exists, update the OTP and expiration time
+      existingOtp.otp = otp;
+      existingOtp.otpExpires = new Date(Date.now() + 2 * 60 * 1000); // Current time + 2 minutes
+      await existingOtp.save(); // Save the updated record
+      console.log('OTP updated successfully.');
+    } else {
+      // If it doesn't exist, create a new OTP record
+      const newOtp = await Otp.create({
+        email,
+        otp,
+        otpExpires: new Date(Date.now() + 2 * 60 * 1000), // Current time + 2 minutes
+      });
+      console.log('New OTP created successfully.');
+    }
 
     return res.status(200).json({ message: "OTP has been sent to your email", success: true, });
   } catch (error) {
