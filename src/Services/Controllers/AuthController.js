@@ -226,6 +226,7 @@ module.exports.ForgotPassword = async (req, res) => {
 
 
 module.exports.verifyForgotOtp = async (req, res) => {
+
   const { email, otp } = req.body;
 
   try {
@@ -248,16 +249,20 @@ module.exports.verifyForgotOtp = async (req, res) => {
       });
     }
 
+    var token = jwt.sign(
+      { user_id: user.id, role: user.role },
+      process.env.jwt_token_key,
+    );
+
     // OTP is correct, finalize registration
+    user.token = token
+    user.tokenExpires = new Date(Date.now() + 2 * 60 * 1000)
     user.otp = undefined;
     user.otpExpires = undefined;
     user.isVerified = true; // Set user as verified
     await user.save();
 
-    var token = jwt.sign(
-      { user_id: user.id, role: user.role },
-      process.env.jwt_token_key,
-    );
+
 
     return res.json({
       status: 200,
@@ -449,6 +454,13 @@ module.exports.ResetPassword = async (req, res) => {
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
+    console.log('user', user)
+
+    console.log('!user.token', !user.token)
+    console.log('user.token !== token', user.token !== token)
+    console.log('Date.now() > user.tokenExpires', Date.now() > user.tokenExpires)
+
+
 
     // Check if the provided token matches the stored token and has not expired
     if (!user.token || user.token !== token || Date.now() > user.tokenExpires) {
