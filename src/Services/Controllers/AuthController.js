@@ -43,7 +43,7 @@ module.exports.SignIn = async (req, res, next) => {
       });
     }
 
-    var token = token = jwt.sign(
+    var token = jwt.sign(
       { user_id: user_detail.id, role: user_detail.role },
       process.env.jwt_token_key,
     );
@@ -52,7 +52,6 @@ module.exports.SignIn = async (req, res, next) => {
     user_detail.preferenceLongitude = longitude
     user_detail.deviceId = deviceId
     user_detail.save()
-
 
 
     const userData = {
@@ -255,11 +254,18 @@ module.exports.verifyForgotOtp = async (req, res) => {
     user.isVerified = true; // Set user as verified
     await user.save();
 
+    var token = jwt.sign(
+      { user_id: user.id, role: user.role },
+      process.env.jwt_token_key,
+    );
+
     return res.json({
       status: 200,
       success: true,
+      token,
       message: "Your have been verified successfully",
     });
+
   } catch (error) {
     console.error("Error in verifyOtp:", error);
     return res.status(500).json({

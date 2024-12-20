@@ -711,10 +711,9 @@ function filterByPlanType(listings, type) {
 }
 
 exports.UpdateFilter = async (req, res) => {
-
-    console.log("--------update filter-----------")
+    console.log("--------update filter-----------");
     try {
-        const userId = req.user.id
+        const userId = req.user.id;
         const { radiusInMiles, type, plan, minPrice, maxPrice } = req.query;
 
         // Check if the user exists
@@ -726,23 +725,7 @@ exports.UpdateFilter = async (req, res) => {
         // Find an existing filter for the user
         let filter = await Filter.findOne({ userId });
 
-        if (filter) {
-            // If filter exists, update the existing filter
-            filter.radiusInMiles = radiusInMiles || filter.radiusInMiles;
-            filter.type = type || filter.type;
-            filter.plan = plan || filter.plan;
-            filter.minPrice = minPrice || filter.minPrice;
-            filter.maxPrice = maxPrice || filter.maxPrice;
-
-            // Save the updated filter
-            await filter.save();
-
-            return res.status(200).json({
-                success: true,
-                message: "Filter updated successfully",
-                filter,
-            });
-        } else {
+        if (!filter) {
             // If filter does not exist, create a new one
             filter = new Filter({
                 userId,
@@ -762,6 +745,32 @@ exports.UpdateFilter = async (req, res) => {
                 filter,
             });
         }
+
+        // If no query parameters are provided, return the existing filter data
+        if (!radiusInMiles && !type && !plan && !minPrice && !maxPrice) {
+            return res.status(200).json({
+                success: true,
+                message: "No changes made, returning existing filter",
+                filter,
+            });
+        }
+
+        // If filter exists and query parameters are provided, update the existing filter
+        filter.radiusInMiles = radiusInMiles || filter.radiusInMiles;
+        filter.type = type || filter.type;
+        filter.plan = plan || filter.plan;
+        filter.minPrice = minPrice || filter.minPrice;
+        filter.maxPrice = maxPrice || filter.maxPrice;
+
+        // Save the updated filter
+        await filter.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Filter updated successfully",
+            filter,
+        });
+
     } catch (error) {
         console.error(error);
         return res.status(500).json({
@@ -770,6 +779,7 @@ exports.UpdateFilter = async (req, res) => {
         });
     }
 };
+
 
 exports.clearFilter = async (req, res) => {
     console.log("--------clear filter-----------");
@@ -782,6 +792,9 @@ exports.clearFilter = async (req, res) => {
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
+
+        user.deviceId = ''
+        user.save()
 
         // Find the filter associated with the user
         const filter = await Filter.findOne({ userId });
@@ -913,8 +926,6 @@ exports.getListingsWithinRadius = async (req, res) => {
             });
 
         } else {
-
-
 
             const radiusInMiles = 100;
 
