@@ -164,13 +164,18 @@ module.exports.createUser = async (req, res, next) => {
         from: '+13345186584',
         to: phoneNumber,
       });*/
-    await client.messages.create({
+
+    console.log('phoneNumber', phoneNumber)
+    console.log('TWILLIO_SENDER_NO', TWILLIO_SENDER_NO)
+    console.log('TWILIO_AUTH_TOKEN', TWILIO_AUTH_TOKEN)
+
+    const messageResponse = await client.messages.create({
       body: `Your otp is ${otp}`,
       from: `whatsapp:${TWILLIO_SENDER_NO}`,
       to: `whatsapp:${phoneNumber}`
     });
 
-
+    console.log('messageResponse', messageResponse)
     // client.messages.create({
     //   body: `Your OTP code is ${otp}. It will expire in 2 minutes.`,
     //   from: `whatsapp:${TWILLIO_SENDER_NO}`,
@@ -199,8 +204,10 @@ module.exports.createUser = async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
+      otpResponse: messageResponse,
       message: "OTP has been sent to your phone number.",
     });
+    
   } catch (error) {
     console.error("Error in createUser:", error);
     return res.status(500).json({

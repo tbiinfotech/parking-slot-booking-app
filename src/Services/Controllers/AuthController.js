@@ -107,6 +107,9 @@ module.exports.verifyOtp = async (req, res) => {
     // OTP is correct, move the pending user to the main User collection
     const { name, phoneNumber, password, latitude, longitude, deviceId } = pendingUser;
 
+    console.log('pendingUser.latitude',pendingUser.latitude)
+    console.log('pendingUser.longitude',pendingUser.longitude)
+
     // Create a new user record in the User collection
     const newUser = new User({
       name,
@@ -115,6 +118,8 @@ module.exports.verifyOtp = async (req, res) => {
       phoneNumber,
       deviceId,
       latitude, longitude,
+      preferenceLatitude: pendingUser.latitude,
+      preferenceLongitude: pendingUser.longitude,
       isVerified: true, // Mark as verified
     });
 
