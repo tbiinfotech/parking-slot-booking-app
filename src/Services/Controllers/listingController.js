@@ -887,10 +887,7 @@ const getFilterAddress = async (userId, queryParams) => {
 
         // If no listings are found after filtering
         if (filteredListings.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "No listings found with the specified filters.",
-            });
+            console.log("No listings found with the specified filters.")
         }
 
         // Optionally mark as favorite or other custom processing
@@ -907,6 +904,7 @@ const getFilterAddress = async (userId, queryParams) => {
 
 exports.getListingsWithinRadius = async (req, res) => {
     try {
+        console.log('getListingsWithinRadius req.user.id',req.user.id)
         const user = await User.findById(req.user.id);
         const userFilterInfo = await Filter.find({ userId: req.user.id });
         console.log('userFilterInfo', userFilterInfo[0])
