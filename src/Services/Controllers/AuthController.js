@@ -10,6 +10,7 @@ const PendingUser = require("../models/pendingUsers")
 const { signInSchema, emailSchema, passwordSchema } = require('../../libs/schemaValidation')
 const { SendEmail } = require('../../libs/Helper')
 const { generateOTP, createNotification } = require('./../../../utills/authUtils')
+const { sendPushNotificationFunc } = require('../Controllers/NotificationController')
 
 
 // const client = require('twilio')(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, { lazyLoading: true })
@@ -107,8 +108,8 @@ module.exports.verifyOtp = async (req, res) => {
     // OTP is correct, move the pending user to the main User collection
     const { name, phoneNumber, password, latitude, longitude, deviceId } = pendingUser;
 
-    console.log('pendingUser.latitude',pendingUser.latitude)
-    console.log('pendingUser.longitude',pendingUser.longitude)
+    console.log('pendingUser.latitude', pendingUser.latitude)
+    console.log('pendingUser.longitude', pendingUser.longitude)
 
     // Create a new user record in the User collection
     const newUser = new User({
@@ -516,7 +517,7 @@ module.exports.changePassword = async (req, res) => {
     // Check if the old password is correct
     const isMatch = bcrypt.compareSync(oldPassword, user.password);
     if (!isMatch) {
-      return res.status(400).json({ success: false, message: "Old password is incorrect" });
+      return res.status(400).json({ success: false, message: "Current Password is incorrect" });
     }
 
     // Hash the new password
@@ -536,7 +537,7 @@ module.exports.changePassword = async (req, res) => {
       .then(notification => console.log('Notification created:', notificationData))
       .catch(error => console.error('Error:', error));
 
-
+      sendPushNotificationFunc()
     return res.status(200).json({ success: true, message: "Password changed successfully" });
   } catch (error) {
     console.error("Error in Change Password: ", error);
