@@ -322,11 +322,17 @@ module.exports.verifyEmail = async (req, res, next) => {
         console.log("Nodemailer error ---------- ", error);
       });
 
-    const userEmail = await Otp.create({
-      email,
-      otp,
-      otpExpires: Date.now() + 2 * 60 * 1000, // OTP valid for 10 minutes
-    });
+    const userEmail = await Otp.findOneAndUpdate(
+      { email }, // Query to find the document by email
+      {
+        otp, // Update the OTP
+        otpExpires: Date.now() + 2 * 60 * 1000, // Update the OTP expiration time (valid for 2 minutes)
+      },
+      {
+        new: true, // Return the updated document
+        upsert: true, // If no document is found, create a new one
+      }
+    );
 
     return res.json({
       status: 200,
@@ -537,7 +543,7 @@ module.exports.changePassword = async (req, res) => {
       .then(notification => console.log('Notification created:', notificationData))
       .catch(error => console.error('Error:', error));
 
-      sendPushNotificationFunc()
+    sendPushNotificationFunc()
     return res.status(200).json({ success: true, message: "Password changed successfully" });
   } catch (error) {
     console.error("Error in Change Password: ", error);
