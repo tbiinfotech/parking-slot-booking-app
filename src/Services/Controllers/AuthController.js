@@ -32,6 +32,7 @@ module.exports.SignIn = async (req, res, next) => {
 
     const user_detail = await User.findOne({
       email: req.body.email,
+      isDeleted: false
     });
 
     if (
