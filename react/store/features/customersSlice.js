@@ -272,6 +272,35 @@ export const fetchCustomersWithPagination = createAsyncThunk(
         }
     }
 );
+export const searchCustomersWithPagination = createAsyncThunk(
+    'customers/searchCustomersWithPagination',
+    async ({ token, page, limit, search }, { rejectWithValue }) => {
+        try {
+            let query = `?page=${encodeURIComponent(page || 1)}&limit=${encodeURIComponent(limit || 10)}`
+            if (search) {
+                query += `&search=${encodeURIComponent(search)}`
+            }
+            const request = await axios.get(`${import.meta.env.VITE_API_URL}/api/search-users${query}`, {
+                headers: {
+                    Authorization: `Bearer ${token} `,
+                },
+            });
+
+            const { data, success, message } = request.data;
+
+            console.log('fetchCustomersWithPagination data', data)
+            if (!success) {
+                toast.error(message || 'Something went Wrong!')
+                return rejectWithValue(message || 'Something went Wrong!');
+            }
+
+            return data;  // Return data for fulfilled action
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Something went Wrong!')
+            return rejectWithValue(error.response?.data?.message || 'Something went Wrong!');
+        }
+    }
+);
 
 
 const initialState = {
@@ -394,7 +423,8 @@ const customersSlice = createSlice({
             .addCase(deleteAllListing.rejected, (state, action) => {
                 state.actionLoading = false;
                 state.error = action.payload;
-            }).addCase(fetchCustomersWithPagination.pending, (state) => {
+            })
+            .addCase(fetchCustomersWithPagination.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
@@ -405,7 +435,19 @@ const customersSlice = createSlice({
             .addCase(fetchCustomersWithPagination.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
-            });
+            })
+            .addCase(searchCustomersWithPagination.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(searchCustomersWithPagination.fulfilled, (state, action) => {
+                state.loading = false;
+                state.data = action.payload;
+            })
+            .addCase(searchCustomersWithPagination.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
     },
 });
 

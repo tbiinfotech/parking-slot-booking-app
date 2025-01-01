@@ -33,8 +33,12 @@ function ConfirmModal({ open, setOpen, type, onDeleteSelected, selectedUsers, se
             console.log('deleteSpace open', open)
             dispatch(deleteListing({ listId: open, token }))
         } else if (type == 'user') {
-            onDeleteSelected(selectedUsers);
-            setSelectedUsers([]);
+            if (typeof open === 'string') {
+                dispatch(deleteCustomer({ userId: open, token }))
+            } else {
+                onDeleteSelected(selectedUsers);
+                setSelectedUsers([]);
+            }
         } else if (type == 'deleteAllSpace') {
             dispatch(deleteAllListing({ listIds: selectedUsers, token }))
         } else {

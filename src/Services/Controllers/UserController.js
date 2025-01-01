@@ -207,7 +207,7 @@ module.exports.createUser = async (req, res, next) => {
       otpResponse: messageResponse,
       message: "OTP has been sent to your phone number.",
     });
-    
+
   } catch (error) {
     console.error("Error in createUser:", error);
     return res.status(500).json({
@@ -448,6 +448,82 @@ module.exports.deleteUsersWithPagination = async (req, res, next) => {
       status: 400,
       success: false,
       message: error.message,
+    });
+  }
+};
+
+
+
+module.exports.searchUsers = async (req, res) => {
+  try {
+    const { search } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const matchConditions = {
+      $and: [
+        { role: { $ne: 'owner' } },
+        { isDeleted: { $ne: true } },
+      ]
+    };
+
+    // Check if at least one filter is provided
+    if (!search) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a search query",
+      });
+    }
+
+
+    if (search) {
+      matchConditions.$and.push({
+        $or: [
+          { name: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } }
+        ],
+      });
+    }
+
+
+    const baseUrl = `${req.protocol}://${req.get('host')}/`;
+    // Perform aggregation with $lookup to join User and Profile collections
+    const users = await User.find(matchConditions)
+      .sort({ createdAt: -1 }) // Sort by createdAt in descending order
+      .skip(skip)
+      .limit(limit);
+
+    // Check if results were found
+    if (!users.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No users found!",
+      });
+    }
+
+    const totalUsers = await User.countDocuments(matchConditions);
+    const totalPages = Math.ceil(totalUsers / limit);
+
+    // Return the search results
+    return res.status(200).json({
+      success: true,
+      message: "Users found.",
+      data: {
+        records: users,
+        pagination: {
+          totalUsers,
+          totalPages,
+          currentPage: page,
+          limit,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error in searchUsers  --------", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error!",
+      error: error.message
     });
   }
 };

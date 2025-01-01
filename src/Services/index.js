@@ -43,6 +43,7 @@ router.get("/api/get-user", authorize(), UserController.getUser);
 router.get('/api/get-users', authorize(), UserController.getUsersWithPagination);
 
 router.get("/api/users/:id", authorize(), UserController.getUserById);
+router.get("/api/search-users", authorize(), UserController.searchUsers);
 
 
 router.post(
