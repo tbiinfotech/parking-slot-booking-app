@@ -162,7 +162,7 @@ module.exports.ForgotPassword = async (req, res) => {
     }
 
     // Find the user by email
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email, isDeleted: false });
     if (!user) {
       return res.status(404).json({ message: "User not found", success: false, });
     }
@@ -544,7 +544,7 @@ module.exports.changePassword = async (req, res) => {
       .then(notification => console.log('Notification created:', notificationData))
       .catch(error => console.error('Error:', error));
 
-    sendPushNotificationFunc()
+    // sendPushNotificationFunc()
     return res.status(200).json({ success: true, message: "Password changed successfully" });
   } catch (error) {
     console.error("Error in Change Password: ", error);

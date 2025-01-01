@@ -484,7 +484,9 @@ exports.updateListing = async (req, res) => {
             dimensions,
             amenities,
             vehicleType,
-            spaceType, status
+            spaceType,
+            status,
+            oldMediaUrl
         } = req.body;
 
         // Find the existing listing to handle photo deletion if needed
@@ -518,16 +520,23 @@ exports.updateListing = async (req, res) => {
             : undefined;
 
         // Handle photos if files are uploaded
+
+        let newPhotos = []
+
         if (req.files && req.files.length > 0) {
             // Delete old photos from the file system
-            listing.photos.forEach(photoPath => {
-                fs.unlink(photoPath, (err) => {
-                    if (err) console.error(`Failed to delete old photo at ${photoPath}:`, err);
-                });
-            });
+            // listing.photos.forEach(photoPath => {
+            //     fs.unlink(`public/${photoPath}`, (err) => {
+            //         if (err) console.error(`Failed to delete old photo at ${photoPath}:`, err);
+            //     });
+            // });
 
+            // const oldPhotos = oldMediaUrl?.length ? oldMediaUrl.map(path => path.split('public/')[1]) : []
+            // listing.photos = [...oldPhotos, ...newPhotos]
+            const oldPhotos = listing.photos?.length ? listing.photos.map(path => path.replace(/^public\//, '')) : []
+            newPhotos = [...oldPhotos, ...req.files.map(file => file.path.replace(/^public\//, ''))]
             // Add new photos
-            listing.photos = req.files.map(file => file.path.replace(/^public\//, ''));
+            // listing.photos = req.files.map(file => file.path.replace(/^public\//, ''));
         }
 
         // Validate required fields
@@ -565,7 +574,7 @@ exports.updateListing = async (req, res) => {
             ...(parsedAmenities && { amenities: parsedAmenities }),
             ...(vehicleType && { vehicleType: vehicleType.trim() }),
             ...(spaceType && { spaceType: spaceType.trim() }),
-            ...(req.files && req.files.length > 0 && { photos: listing.photos }) // Update photos if new ones were uploaded
+            ...(req.files && req.files.length > 0 && { photos: newPhotos }) // Update photos if new ones were uploaded
         };
 
         // Update the listing in the database
@@ -904,7 +913,7 @@ const getFilterAddress = async (userId, queryParams) => {
 
 exports.getListingsWithinRadius = async (req, res) => {
     try {
-        console.log('getListingsWithinRadius req.user.id',req.user.id)
+        console.log('getListingsWithinRadius req.user.id', req.user.id)
         const user = await User.findById(req.user.id);
         const userFilterInfo = await Filter.find({ userId: req.user.id });
         console.log('userFilterInfo', userFilterInfo[0])
