@@ -544,7 +544,7 @@ module.exports.changePassword = async (req, res) => {
       .then(notification => console.log('Notification created:', notificationData))
       .catch(error => console.error('Error:', error));
 
-    sendPushNotificationFunc()
+    // sendPushNotificationFunc()
     return res.status(200).json({ success: true, message: "Password changed successfully" });
   } catch (error) {
     console.error("Error in Change Password: ", error);
