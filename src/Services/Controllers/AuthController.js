@@ -162,7 +162,7 @@ module.exports.ForgotPassword = async (req, res) => {
     }
 
     // Find the user by email
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email, isDeleted: false });
     if (!user) {
       return res.status(404).json({ message: "User not found", success: false, });
     }
