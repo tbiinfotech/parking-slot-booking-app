@@ -98,6 +98,7 @@ router.get("/api/clear-filter", authorize(), ListingController.clearFilter);
 router.post('/api/favorites', authorize(), ListingController.addToFavorites);
 router.get('/api/favorites', authorize(), ListingController.getFavoriteAddresses);
 router.put('/api/listings/status/:listingId', authorize(), ListingController.updateListingStatus);
+router.post('/api/listings/status/:id', authorize(), ListingController.updateListingAvailability);
 
 // router.post('/api/listings/:listingId', authorize(), ListingController.editListing);
 
@@ -109,12 +110,19 @@ router.post(
   "/api/listings/:id",
   authorize(),
   (req, res, next) => {
-    upload.array('mediaUrl', 8)(req, res, (err) => {
-      if (err) {
-        return res.status(400).json({ success: false, message: err.message });
-      }
-      next();
-    });
+    upload.fields([
+      { name: 'mediaUrl[0]', maxCount: 1 },
+      { name: 'mediaUrl[1]', maxCount: 1 },
+      { name: 'mediaUrl[2]', maxCount: 1 },
+      { name: 'mediaUrl[3]', maxCount: 1 },
+    ])
+      // upload.array('mediaUrl', 4)
+      (req, res, (err) => {
+        if (err) {
+          return res.status(400).json({ success: false, message: err.message });
+        }
+        next();
+      });
   },
   ListingController.updateListing
 );

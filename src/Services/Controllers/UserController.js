@@ -171,8 +171,7 @@ module.exports.createUser = async (req, res, next) => {
       } else {
         return res.status(400).json({
           success: false,
-          message:
-            'OTP already sent, you can resend again after 2 minutes.',
+          message: "OTP already sent, you can resend again after 2 minutes.",
         });
       }
     }
