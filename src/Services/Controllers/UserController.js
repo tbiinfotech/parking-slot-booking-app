@@ -361,6 +361,7 @@ module.exports.deleteUser = async (req, res, next) => {
 
     if (user) {
       // Update user to mark as deleted
+      user.email = `${user.email}#${Date.now()}`;
       user.isDeleted = true;
       await user.save();
 
@@ -404,7 +405,14 @@ module.exports.deleteUsersWithPagination = async (req, res, next) => {
     // Mark users as deleted
     await User.updateMany(
       { _id: { $in: userIds }, email: { $ne: 'admin@gmail.com' } },
-      { $set: { isDeleted: true } }
+      [
+        {
+          $set: {
+            email: { $concat: ['$email', '#', { $toString: Date.now() }] },
+            isDeleted: true
+          }
+        }
+      ]
     );
 
     // Define filter to exclude deleted users and the admin email

@@ -584,10 +584,16 @@ exports.updateListing = async (req, res) => {
             : undefined;
 
         // Handle amenities as an array of strings
-        const parsedAmenities = Array.isArray(amenities)
-            ? amenities.map(a => a.trim()).filter(Boolean) // Trim and filter empty values
-            : undefined;
 
+        console.log('amenities---', amenities);
+
+        let parsedAmenities = Array.isArray(amenities)
+            ? amenities.map(a => a.trim()).filter(Boolean) // Trim and filter empty values
+            : [];
+
+        if (parsedAmenities.includes('None of the Above')) {
+            parsedAmenities = [];
+        }
         // Handle photos if files are uploaded
 
         let oldPhotos = [...listing.photos];
@@ -596,7 +602,6 @@ exports.updateListing = async (req, res) => {
             let reqFiles = req.files;
 
             Object.keys(reqFiles).forEach((key, index) => {
-                console.log(key)
                 const number = parseInt(key.match(/\d+/)[0], 10)
                 const fileArray = reqFiles[key];
                 if (fileArray.length > 0) {
@@ -606,7 +611,7 @@ exports.updateListing = async (req, res) => {
                         oldPhotoPath = listing.photos[index];
                         try {
                             // Delete the old photo from the file system
-                            fs.unlinkSync(path.join('public', oldPhotoPath));
+                            // fs.unlinkSync(path.join('public', oldPhotoPath));
                             console.log(`Successfully deleted old photo at ${oldPhotoPath}`);
                         } catch (err) {
                             console.log(`Failed to delete old photo at ${oldPhotoPath}:`, err);
