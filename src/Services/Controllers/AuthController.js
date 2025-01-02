@@ -416,11 +416,15 @@ module.exports.resendOtp = async (req, res, next) => {
     // Generate and send OTP
     const otp = generateOTP();
 
-    await client.messages.create({
-      body: `Your OTP for account verification is ${otp}. It is valid for 2 minutes. Please do not share it with anyone.`,
-      from: 'whatsapp:+14155238886',
+    await client.messages
+    .create({
+      from: `whatsapp:${process.env.TWILLIO_SENDER_NO}`,
+      contentSid: 'HXc87bc1ac5799f2075a8e40f137920886',
+      contentVariables: `{"1":"${otp}"}`,
       to: `whatsapp:${pendingUser.phoneNumber}`,
-    }).then(message => console.log(`OTP sent. SID: ${message.sid}`));
+    })
+    .then((message) => console.log(`OTP sent. SID: ${message.sid}`));
+
 
     // Update OTP and expiration time in PendingUser collection
     await PendingUser.findOneAndUpdate(

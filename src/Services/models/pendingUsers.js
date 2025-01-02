@@ -50,10 +50,24 @@ const PendingUserSchema = new mongoose.Schema(
   }
 );
 
+// Set up a change stream to watch the PendingUser collection
+
+
 // TTL index to automatically remove expired OTP records
-PendingUserSchema.index({ otpExpires: 1 }, { expireAfterSeconds: 600 });
+// PendingUserSchema.index({ otpExpir12es: 1 }, { expireAfterSeconds: 600 });
+
 
 // Create the model from the schema
 const PendingUser = mongoose.model('PendingUser', PendingUserSchema);
+
+const changeStream = PendingUser.watch([
+  { $match: { 'operationType': 'delete' } } // Watch only delete operations
+]);
+
+// Listen for delete events
+changeStream.on('change', (change) => {
+  console.log(`Document deleted: ${JSON.stringify(change.documentKey)}`);
+
+});
 
 module.exports = PendingUser;

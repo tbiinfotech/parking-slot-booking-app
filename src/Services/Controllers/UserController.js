@@ -1,37 +1,50 @@
-const bcrypt = require("bcrypt");
-const User = require("../models/users");
-const Listing = require("../models/Listing");
-const PendingUser = require("../models/pendingUsers")
+const bcrypt = require('bcrypt');
+const User = require('../models/users');
+const Listing = require('../models/Listing');
+const PendingUser = require('../models/pendingUsers');
 
 const Joi = require('joi');
-const jwt = require("jsonwebtoken");
+const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
-const { userSchema, updateUserSchema, updateProfileSchema, emailSchema } = require('../../libs/schemaValidation')
-const { generateOTP } = require('./../../../utills/authUtils')
-const errorHandling = require('../../libs/errorHandling')
-const mongoose = require("mongoose");
+const {
+  userSchema,
+  updateUserSchema,
+  updateProfileSchema,
+  emailSchema,
+} = require('../../libs/schemaValidation');
+const { generateOTP } = require('./../../../utills/authUtils');
+const errorHandling = require('../../libs/errorHandling');
+const mongoose = require('mongoose');
 
-const { SendEmail } = require('../../libs/Helper')
+const { SendEmail } = require('../../libs/Helper');
 
-const { TWILIO_SERVICE_SID, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILLIO_SENDER_NO } = process.env;
+const {
+  TWILIO_SERVICE_SID,
+  TWILIO_ACCOUNT_SID,
+  TWILIO_AUTH_TOKEN,
+  TWILLIO_SENDER_NO,
+} = process.env;
 const client = require('twilio')(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 
 module.exports.getUser = async (req, res, next) => {
   try {
     const users = await User.find({
       email: { $ne: 'admin@gmail.com' },
-      isDeleted: { $ne: true }  // Exclude users marked as deleted
-    }).sort({ createdAt: -1 }).skip(skip).limit(limit);
+      isDeleted: { $ne: true }, // Exclude users marked as deleted
+    })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
     return res.json({
       status: 200,
       response: users,
       success: true,
-      message: "Data found",
+      message: 'Data found',
     });
   } catch (error) {
-    console.log("Error while trying to get data-------", error);
+    console.log('Error while trying to get data-------', error);
     return res.json({
       status: 400,
       success: false,
@@ -41,16 +54,16 @@ module.exports.getUser = async (req, res, next) => {
 };
 
 module.exports.getUsersWithPagination = async (req, res, next) => {
-  console.log('getUsersWithPagination')
+  console.log('getUsersWithPagination');
   try {
-    const page = parseInt(req.query.page) || 1;  // Default to page 1 if not provided
+    const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
     const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page if not provided
     const skip = (page - 1) * limit;
 
     // Define your filter criteria
     const filter = {
       email: { $ne: 'admin@gmail.com' },
-      isDeleted: { $ne: true },  // Exclude users marked as deleted
+      isDeleted: { $ne: true }, // Exclude users marked as deleted
     };
 
     // Get the data with pagination and filter applied
@@ -67,7 +80,8 @@ module.exports.getUsersWithPagination = async (req, res, next) => {
       status: 200,
 
       data: {
-        records: users, pagination: {
+        records: users,
+        pagination: {
           totalUsers,
           totalPages,
           currentPage: page,
@@ -75,11 +89,10 @@ module.exports.getUsersWithPagination = async (req, res, next) => {
         },
       },
       success: true,
-      message: "Data found",
-
+      message: 'Data found',
     });
   } catch (error) {
-    console.error("Error while trying to get data-------", error);
+    console.error('Error while trying to get data-------', error);
     return res.json({
       status: 400,
       success: false,
@@ -90,15 +103,14 @@ module.exports.getUsersWithPagination = async (req, res, next) => {
 
 module.exports.getUserById = async (req, res) => {
   try {
-
     // Extract userId from request parameters
     const { id } = req.params;
 
     // Find user by userId
-    const user = await User.findById(id).select('-password');;
+    const user = await User.findById(id).select('-password');
     if (!user) {
       return res.status(404).json({
-        message: "User not found",
+        message: 'User not found',
         success: false,
       });
     }
@@ -108,27 +120,36 @@ module.exports.getUserById = async (req, res) => {
       status: 200,
       response: user,
       success: true,
-      message: "User found",
+      message: 'User found',
     });
   } catch (error) {
-    console.log("Error while trying to get user by ID:", error);
+    console.log('Error while trying to get user by ID:', error);
     return res.status(500).json({
       status: 500,
       success: false,
-      message: "Internal Server Error",
+      message: 'Internal Server Error',
     });
   }
 };
 
-
 module.exports.createUser = async (req, res, next) => {
-  console.log("-----create_user------", TWILLIO_SENDER_NO, ":", TWILIO_ACCOUNT_SID, ":", TWILIO_AUTH_TOKEN);
+  console.log(
+    '-----create_user------',
+    TWILLIO_SENDER_NO,
+    ':',
+    TWILIO_ACCOUNT_SID,
+    ':',
+    TWILIO_AUTH_TOKEN
+  );
   try {
-    let { name, email, password, phoneNumber, latitude, longitude, deviceId } = req.body;
+    let { name, email, password, phoneNumber, latitude, longitude, deviceId } =
+      req.body;
     const { error } = userSchema.validate(req.body);
 
     if (error) {
-      return res.status(400).json({ success: false, message: error.details[0].message });
+      return res
+        .status(400)
+        .json({ success: false, message: error.details[0].message });
     }
 
     // Check if the email already exists in the main Users collection
@@ -136,7 +157,7 @@ module.exports.createUser = async (req, res, next) => {
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "Email already exists. Please try a different email.",
+        message: 'Email already exists. Please try a different email.',
       });
     }
 
@@ -146,51 +167,33 @@ module.exports.createUser = async (req, res, next) => {
       // Remove expired pending user records
       if (existingPendingUser.otpExpires < Date.now()) {
         await PendingUser.deleteOne({ email });
+        console.log('Deleted Pending User createUser :::::::::::::::::::::::::::::');
       } else {
         return res.status(400).json({
           success: false,
-          message: "OTP already sent. Please verify the OTP or wait for it to expire.",
+          message:
+            'OTP already sent, you can resend again after 2 minutes.',
         });
       }
     }
 
-    // Hash password
-    const hashedPassword = bcrypt.hashSync(password, bcrypt.genSaltSync(10));
-
     // Generate and send OTP
-    const otp = generateOTP(); // Assume this generates a 6-digit OTP
-    /*  await client.messages.create({
-        body: `Your OTP code is ${otp}. It will expire in 10 minutes.`,
-        from: '+13345186584',
-        to: phoneNumber,
-      });*/
+    const otp = generateOTP();
 
-    console.log('phoneNumber', phoneNumber)
-    console.log('TWILLIO_SENDER_NO', TWILLIO_SENDER_NO)
-    console.log('TWILIO_AUTH_TOKEN', TWILIO_AUTH_TOKEN)
+    console.log("Otp Is :-", otp)
 
-    const messageResponse = await client.messages.create({
-      body: `Your otp is ${otp}`,
-      from: `whatsapp:${TWILLIO_SENDER_NO}`,
-      to: `whatsapp:${phoneNumber}`
-    });
+    await client.messages
+      .create({
+        from: `whatsapp:${process.env.TWILLIO_SENDER_NO}`,
+        contentSid: 'HXc87bc1ac5799f2075a8e40f137920886',
+        contentVariables: `{"1":"${otp}"}`,
+        to: `whatsapp:${phoneNumber}`,
+      })
+      .then((message) => console.log(`OTP sent. SID: ${message.sid}`));
 
-    console.log('messageResponse', messageResponse)
-    // client.messages.create({
-    //   body: `Your OTP code is ${otp}. It will expire in 2 minutes.`,
-    //   from: `whatsapp:${TWILLIO_SENDER_NO}`,
-    //   to: `whatsapp:${phoneNumber}`
-    // }).then(message => console.log(message.sid))
-
-
-    // client.messages.create({
-    //   body: `Your OTP code is ${otp}. It will expire in 2 minutes.`,
-    //   from: 'whatsapp:+14155238886',
-    //   to: `whatsapp:${phoneNumber}`
-    // }).then(message => console.log("whatsup message id:", message.sid));
-
-    // Save user data in the PendingUser collection
-    const pendingUser = await PendingUser.create({
+    const hashedPassword = bcrypt.hashSync(password, bcrypt.genSaltSync(10));
+    // Update OTP and expiration time in PendingUser collection
+    await PendingUser.create({
       name,
       email,
       password: hashedPassword,
@@ -199,20 +202,18 @@ module.exports.createUser = async (req, res, next) => {
       longitude,
       deviceId,
       otp,
-      otpExpires: Date.now() + 2 * 60 * 1000, // OTP valid for 2 minutes
+      otpExpires: new Date(Date.now() + 2 * 60 * 1000),
     });
 
     return res.status(200).json({
       success: true,
-      otpResponse: messageResponse,
-      message: "OTP has been sent to your phone number.",
+      message: 'OTP has been sent to your phone number.',
     });
-
   } catch (error) {
-    console.error("Error in createUser:", error);
+    console.error('Error in createUser:', error);
     return res.status(500).json({
       success: false,
-      message: "An error occurred while processing your request.",
+      message: 'An error occurred while processing your request.',
     });
   }
 };
@@ -236,7 +237,7 @@ module.exports.updateUser = async (req, res, next) => {
       return res.status(400).json({
         status: 400,
         success: false,
-        message: "User does not exist!",
+        message: 'User does not exist!',
       });
     }
 
@@ -252,7 +253,7 @@ module.exports.updateUser = async (req, res, next) => {
       return res.status(400).json({
         status: 400,
         success: false,
-        message: "Email already exists!",
+        message: 'Email already exists!',
       });
     }
 
@@ -267,9 +268,8 @@ module.exports.updateUser = async (req, res, next) => {
       user: updatedUser,
       status: 200,
       success: true,
-      message: "Profile updated",
+      message: 'Profile updated',
     });
-
   } catch (error) {
     console.log(error.message);
     return res.status(500).json({
@@ -280,19 +280,18 @@ module.exports.updateUser = async (req, res, next) => {
   }
 };
 
-
 module.exports.updatePreference = async (req, res, next) => {
-  console.log("updatePreference")
+  console.log('updatePreference');
   try {
     let { type, latitude, longitude } = req.body;
-    console.log('req.user.id', req.user.id)
+    console.log('req.user.id', req.user.id);
 
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(400).json({
         status: 400,
         success: false,
-        message: "User does not exist!",
+        message: 'User does not exist!',
       });
     }
 
@@ -301,18 +300,17 @@ module.exports.updatePreference = async (req, res, next) => {
       return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
     }
 
-    user.preference = capitalizeFirstLetter(type)
-    user.preferenceLatitude = latitude
-    user.preferenceLongitude = longitude
+    user.preference = capitalizeFirstLetter(type);
+    user.preferenceLatitude = latitude;
+    user.preferenceLongitude = longitude;
     user.save();
 
     return res.json({
       user: user,
       status: 200,
       success: true,
-      message: "Preference updated",
+      message: 'Preference updated',
     });
-
   } catch (error) {
     console.log(error.message);
     return res.status(500).json({
@@ -324,30 +322,29 @@ module.exports.updatePreference = async (req, res, next) => {
 };
 
 module.exports.updateNotification = async (req, res, next) => {
-  console.log("updateNotification")
+  console.log('updateNotification');
   try {
     let { status } = req.body;
-    console.log('req.user.id', req.user.id)
+    console.log('req.user.id', req.user.id);
 
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(400).json({
         status: 400,
         success: false,
-        message: "User does not exist!",
+        message: 'User does not exist!',
       });
     }
 
-    user.pushNotification = status
+    user.pushNotification = status;
     user.save();
 
     return res.json({
       user: user,
       status: 200,
       success: true,
-      message: "Notification updated",
+      message: 'Notification updated',
     });
-
   } catch (error) {
     console.log(error.message);
     return res.status(500).json({
@@ -371,17 +368,17 @@ module.exports.deleteUser = async (req, res, next) => {
       return res.json({
         status: 200,
         success: true,
-        message: "User deleted successfully.",
+        message: 'User deleted successfully.',
       });
     } else {
       return res.send({
         status: 400,
         success: false,
-        message: "User does not exist!",
+        message: 'User does not exist!',
       });
     }
   } catch (error) {
-    console.log("Error while trying to update data-------", error);
+    console.log('Error while trying to update data-------', error);
     return res.json({
       status: 400,
       success: false,
@@ -390,11 +387,9 @@ module.exports.deleteUser = async (req, res, next) => {
   }
 };
 
-
-
 module.exports.deleteUsersWithPagination = async (req, res, next) => {
   try {
-    const { userIds } = req.body;  // Array of user IDs to delete
+    const { userIds } = req.body; // Array of user IDs to delete
     const page = parseInt(req.query.page) || 1; // Default to page 1
     const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page
     const skip = (page - 1) * limit;
@@ -403,7 +398,7 @@ module.exports.deleteUsersWithPagination = async (req, res, next) => {
       return res.json({
         status: 400,
         success: false,
-        message: "No user IDs provided",
+        message: 'No user IDs provided',
       });
     }
 
@@ -420,9 +415,7 @@ module.exports.deleteUsersWithPagination = async (req, res, next) => {
     };
 
     // Fetch users with updated filter and pagination
-    const users = await User.find(filter)
-      .skip(skip)
-      .limit(limit);
+    const users = await User.find(filter).skip(skip).limit(limit);
 
     // Get the total count for pagination info
     const totalUsers = await User.countDocuments(filter);
@@ -440,10 +433,10 @@ module.exports.deleteUsersWithPagination = async (req, res, next) => {
         },
       },
       success: true,
-      message: "Users deleted and data refreshed",
+      message: 'Users deleted and data refreshed',
     });
   } catch (error) {
-    console.error("Error while trying to delete users and fetch data:", error);
+    console.error('Error while trying to delete users and fetch data:', error);
     return res.json({
       status: 400,
       success: false,
