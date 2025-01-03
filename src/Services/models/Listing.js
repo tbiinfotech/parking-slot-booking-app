@@ -33,7 +33,7 @@ const listingSchema = new mongoose.Schema({
     vehicleType: { type: String,/* enum: ['Compact', 'Standard', 'RV', 'Boat', 'LargeVehicles', 'Motorcycle'],*/ required: true },
     spaceType: { type: String, /*enum: ['Residential', 'Commercial'],*/ required: true },
     photos: [{ type: String }],
-    status: { type: String, enum: ['Available', 'RentOut'], default: 'Available' }
+    status: { type: String, enum: ['Available', 'RentOut', 'Deleted'], default: 'Available' }
 }, { timestamps: true });
 
 // Create the model

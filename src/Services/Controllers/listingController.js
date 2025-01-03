@@ -585,8 +585,6 @@ exports.updateListing = async (req, res) => {
 
         // Handle amenities as an array of strings
 
-        console.log('amenities---', amenities);
-
         let parsedAmenities = Array.isArray(amenities)
             ? amenities.map(a => a.trim()).filter(Boolean) // Trim and filter empty values
             : [];
@@ -958,7 +956,7 @@ const getFilterAddress = async (userId, queryParams) => {
         console.log('Querying listings around coordinates:', [longitude, latitude]);
 
         // Fetch all listings
-        const listings = await Listing.find();
+        const listings = await Listing.find({ status: { $ne: "Deleted" } });
 
         // Validate radiusInMiles
         if (!radiusInKilometers) {
@@ -979,7 +977,8 @@ const getFilterAddress = async (userId, queryParams) => {
 
                 return {
                     ...listing.toObject(), // Ensure it's a plain object
-                    distance: distance / 1000,
+                    // distance: distance / 1000,
+                    distance: Number((distance / 1000).toFixed(1)),
                 };
             })
             .filter((listing) => listing.distance <= radiusInKilometers);
@@ -1078,7 +1077,7 @@ exports.getListingsWithinRadius = async (req, res) => {
             ]);
 
             // Fetch all listings
-            const listings = await Listing.find();
+            const listings = await Listing.find({ status: { $ne: "Deleted" } });
 
             // Filter listings based on distance using Haversine formula
             const nearbyListings = listings
@@ -1092,7 +1091,8 @@ exports.getListingsWithinRadius = async (req, res) => {
 
                     return {
                         ...listing.toObject(), // Ensure it's a plain object
-                        distance: distance / 1000,
+                        // distance: distance / 1000,
+                        distance: Number((distance / 1000).toFixed(2)),
                     };
                 })
                 .filter((listing) => listing.distance <= radiusInKilometers);
