@@ -357,13 +357,14 @@ module.exports.deleteUser = async (req, res, next) => {
   const { id } = req.params;
   try {
     const user = await User.findById(id);
-    const lists = await Listing.find({ owner: id });
+    // const lists = await Listing.find({ owner: id });
 
     if (user) {
       // Update user to mark as deleted
       user.email = `${user.email}#${Date.now()}`;
       user.isDeleted = true;
       await user.save();
+      await Listing.updateMany({ owner: id }, { status: 'Deleted' });
 
       return res.json({
         status: 200,
@@ -414,6 +415,7 @@ module.exports.deleteUsersWithPagination = async (req, res, next) => {
         }
       ]
     );
+    await Listing.updateMany({ owner: id }, { status: 'Deleted' });
 
     // Define filter to exclude deleted users and the admin email
     const filter = {
